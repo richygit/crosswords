@@ -1,5 +1,9 @@
 import React from "react";
+import FileUploader from "./FileUploader";
 
 export default function Home() {
-  return <h1>Home</h1>;
+  //TODO - check if params provided, if so, route to crossword page
+
+  // otherwise show upload area
+  return <FileUploader />;
 }
