@@ -6,6 +6,8 @@ export default function Home() {
   //TODO - check if params provided, if so, route to crossword page
 
   const fileReader = useRef(null);
+  const [matrix, setMatrix] = useState(null);
+  const [clues, setClues] = useState(null);
 
   const onFileRead = (e) => {
     const content = fileReader.current.result;
@@ -13,10 +15,10 @@ export default function Home() {
     let dom = parser.parseFromString(content, "text/html");
 
     const smhCrossword = new SmhCrossword(dom);
-    const matrix = smhCrossword.matrix;
-    console.log("matrix = ", matrix);
-    console.log("across = ", smhCrossword.cluesAcross);
-    console.log("down = ", smhCrossword.cluesDown);
+    setMatrix(smhCrossword.matrix);
+    setClues([smhCrossword.cluesAcross, smhCrossword.cluesDown]);
+    // console.log("matrix = ", smhCrossword.matrix);
+    // console.log("clues = ", [smhCrossword.cluesAcross, smhCrossword.cluesDown]);
 
     //reset fileReader since we don't need it any more
     fileReader.current = null;
