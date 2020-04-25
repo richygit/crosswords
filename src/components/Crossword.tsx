@@ -37,7 +37,7 @@ const Crossword: React.FC<CrosswordProps> = ({
 
   return (
     <>
-      <h1>Crossword</h1>
+      <h1>Puzzle cds or rows transformed (9)</h1>
       <table className="crossword__matrix">
         {answers &&
           withIndex((row, y) => {
