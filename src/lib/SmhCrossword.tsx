@@ -1,5 +1,12 @@
+import { Cell, Matrix } from "../components/Crossword";
+import * as R from "ramda";
+
+export interface ClueGroup {
+  [key: string]: [String, number]; //array tuple
+}
+
 class SmhCrossword {
-  public matrix: Array<Array<String | null>>;
+  public matrix: Matrix;
   public cluesAcross: any;
   public cluesDown: any;
   constructor(dom: Document) {
@@ -11,38 +18,95 @@ class SmhCrossword {
     // window.dom = dom;
   }
 
-  readMatrix(dom: Document): Array<Array<String | null>> {
-    const matrix: Array<Array<String | null>> = [];
+  setClueKeys(matrix: Matrix): Matrix {
+    //set the clue keys based on blanks
+    let key = 1;
+    const withIndex = R.addIndex(R.map);
+
+    const lowerBound = R.flip(R.gte)(0);
+
+    const isActiveCell = (x: number, y: number) => {
+      return (
+        lowerBound(x) &&
+        R.lt(x, matrix[0].length) &&
+        lowerBound(y) &&
+        R.lt(y, matrix.length) &&
+        !matrix[y][x].blank
+      );
+    };
+
+    const cellCheck = (cell: Cell, x: number, y: number) => {
+      if (cell.blank) {
+        return;
+      }
+
+      if (!isActiveCell(x, y)) {
+        return;
+      }
+
+      // horizontal key check
+      // if cell has no cell to left and cell to the right, then it's a key
+      if (!isActiveCell(x - 1, y) && isActiveCell(x + 1, y)) {
+        cell.clueKey = key;
+        key += 1;
+        return;
+      }
+
+      // vertical key check
+      // if cell has no cell above, but cell below, then it's a key
+      if (!isActiveCell(x, y - 1) && isActiveCell(x, y + 1)) {
+        cell.clueKey = key;
+        key += 1;
+        return;
+      }
+    };
+    withIndex(
+      (row, y) =>
+        withIndex(
+          (cell, x) => cellCheck(cell as Cell, x, y),
+          row as Array<Cell>
+        ),
+      matrix
+    );
+
+    console.log(matrix);
+    return matrix;
+  }
+
+  readMatrix(dom: Document): Matrix {
+    const matrix: Matrix = [];
     const rows = dom.querySelectorAll("#crossword table.printOnly tr");
     Array.from(rows).forEach((tr) => {
-      const dataRow: Array<String | null> = [];
+      const dataRow: Array<Cell> = [];
       const cells = tr.querySelectorAll("td");
       Array.from(cells).forEach((td) => {
-        dataRow.push(td.textContent);
+        const txt = td.textContent;
+        return dataRow.push({
+          answer: txt,
+          blank: !R.isNil(txt) && txt.trim().length === 0,
+          clueKey: 0,
+        });
       });
       matrix.push(dataRow);
     });
 
-    return matrix;
+    return this.setClueKeys(matrix);
   }
 
   readClueGroup(group: Element) {
     const buttons: NodeListOf<Element> = group.querySelectorAll("button");
-    const clues: any = {};
+    const clues: ClueGroup = {};
 
     Array.from(buttons).forEach((btn) => {
-      const ref = btn.getAttribute("data-position");
-      if (ref === null) {
-        throw new Error(`Unable to read clue position: ${btn}`);
-      }
-      const clueText = btn.querySelector("span:last-child")!.textContent;
+      const ref: String = btn.getAttribute("data-position")!;
+      const clueText = btn.querySelector("span:last-child")!.textContent!;
       const sep = clueText!.lastIndexOf("(");
       if (sep >= 0) {
         const text = clueText!.slice(0, sep).trim();
         const len = clueText!.slice(sep, -1).replace(/[^\d]/g, "");
-        clues[ref] = [text, len];
+        clues[ref.toString()] = [text, Number.parseInt(len)];
       } else {
-        clues[ref] = [clueText, -1];
+        clues[ref.toString()] = [clueText, -1];
       }
     });
 

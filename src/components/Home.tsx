@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import FileUploader from "./FileUploader";
-import SmhCrossword from "../lib/SmhCrossword";
-import Crossword from "./Crossword";
+import SmhCrossword, { ClueGroup } from "../lib/SmhCrossword";
+import Crossword, { Matrix } from "./Crossword";
+import * as R from "ramda";
 
 const Home: React.FC = () => {
   //TODO - check if params provided, if so, route to crossword page
 
   const fileReader = useRef<FileReader | null>(null);
-  const [matrix, setMatrix] = useState<Array<Array<String | null>> | null>(
-    null
-  );
-  const [clues, setClues] = useState<any | null>(null);
+  const [matrix, setMatrix] = useState<Matrix | null>(null);
+  const [cluesAcross, setCluesAcross] = useState<ClueGroup | null>(null);
+  const [cluesDown, setCluesDown] = useState<ClueGroup | null>(null);
 
   const onFileRead = (e: any) => {
-    if (fileReader.current === null) {
+    if (R.isNil(fileReader.current)) {
       return;
     }
 
@@ -23,7 +23,8 @@ const Home: React.FC = () => {
 
     const smhCrossword = new SmhCrossword(dom);
     setMatrix(smhCrossword.matrix);
-    setClues([smhCrossword.cluesAcross, smhCrossword.cluesDown]);
+    setCluesAcross(smhCrossword.cluesAcross);
+    setCluesDown(smhCrossword.cluesDown);
     // console.log("matrix = ", smhCrossword.matrix);
     // console.log("clues = ", [smhCrossword.cluesAcross, smhCrossword.cluesDown]);
 
@@ -40,11 +41,16 @@ const Home: React.FC = () => {
   };
 
   // otherwise show upload area
-  if (!matrix && !clues) {
-    return <FileUploader onFileChosen={onFileChosen} onFileRead={onFileRead} />;
+  if (!R.isNil(matrix) && !R.isNil(cluesAcross) && !R.isNil(cluesDown)) {
+    return (
+      <Crossword
+        matrix={matrix}
+        cluesAcross={cluesAcross}
+        cluesDown={cluesDown}
+      />
+    );
   } else {
-    //show crossword
-    return <Crossword />;
+    return <FileUploader onFileChosen={onFileChosen} onFileRead={onFileRead} />;
   }
 };
 export default Home;
