@@ -84,7 +84,7 @@ class SmhCrossword {
         return dataRow.push({
           answer: txt,
           blank: !R.isNil(txt) && txt.trim().length === 0,
-          clueKey: 0,
+          clueKey: null,
         });
       });
       matrix.push(dataRow);

@@ -1,0 +1,40 @@
+.crossword__matrix {
+    border-collapse: collapse;
+    height: 552px;
+    width: 552px;
+}
+
+.crossword__matrix tr {
+}
+
+.crossword__matrix tr td {
+}
+
+.crossword__matrix .cell {
+    border: 1px solid #000;
+    position: relative;
+}
+
+.crossword__matrix .blank {
+    background-color: #000;
+}
+
+.crossword__matrix .cell input {
+    height: 30px;
+    width: 30px;
+    border: 0;
+    padding: 0;
+    background-color: rgba(0,0,0,0);
+    font-size: 1.8em;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.crossword__matrix .cell span {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 50%;
+}
+
