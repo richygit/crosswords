@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { ClueGroup } from "../lib/SmhCrossword";
 import * as R from "ramda";
-import "./Crossword.css";
+import "./Crossword.scss";
+import TableCell from "./TableCell";
 
 export type Matrix = Array<Array<Cell>>;
 
@@ -12,57 +13,84 @@ interface CrosswordProps {
 }
 
 export interface Cell {
-  clueKey: Number | null;
-  answer: String | null;
-  blank: Boolean;
+  clueKey: number | null;
+  answer: string | null;
+  blank: boolean;
+}
+
+interface Coords {
+  x: number;
+  y: number;
 }
 
 const Crossword: React.FC<CrosswordProps> = ({
-  matrix: answers,
+  matrix: solution,
   cluesAcross,
   cluesDown,
 }) => {
-  const [userMatrix, setUserMatrix] = useState<Matrix | null>(null);
+  const [answers, setAnswers] = useState<Matrix | null>(null);
+  const [cursor, setCursor] = useState<Coords | null>(null);
 
   useEffect(() => {
-    if (R.isNil(userMatrix)) {
+    if (R.isNil(answers)) {
       // init user matrix
-      const dimx = answers[0].length;
-      const dimy = answers.length;
-      setUserMatrix(R.range(0, dimy).map((row) => Array(dimx)));
+      const dimx = solution[0].length;
+      const dimy = solution.length;
+      setAnswers(R.range(0, dimy).map((row) => Array(dimx)));
     }
-  }, [answers, userMatrix]);
+  }, [solution, answers]);
 
   const withIndex = R.addIndex(R.map);
 
+  const onCellClick = (e: React.MouseEvent): void => {
+    e.preventDefault();
+    let elem: Element = e.target as Element;
+    console.log("elem:", elem);
+    console.log("elem parent:", elem.parentElement);
+    if (elem && elem.nodeName !== "TD") {
+      elem = elem.parentElement as Element;
+    }
+    const coords = elem.id.split(".");
+
+    console.log("coords: ", coords);
+
+    if (coords) {
+      const x = Number.parseInt(coords[0]);
+      const y = Number.parseInt(coords[1]);
+      setCursor({ x, y } as Coords);
+    }
+  };
+
   return (
-    <>
+    <div style={{ margin: "0 auto" }}>
       <h1>Puzzle cds or rows transformed (9)</h1>
       <table className="crossword__matrix">
-        {answers &&
-          withIndex((row, y) => {
-            return (
-              <tr className="row" key={y}>
-                {withIndex((cell, x) => {
-                  return (
-                    <td
-                      className={`cell ${(cell as Cell).blank ? "blank" : ""}`}
-                      key={x}
-                      data-x={x}
-                      data-y={y}
-                      data-cluekey={(cell as Cell).clueKey}
-                      data-blank={(cell as Cell).blank}
-                    >
-                      <input name={`${x}-${y}`} type="text" />
-                      <span>{(cell as Cell).clueKey}</span>
-                    </td>
-                  );
-                }, row as Array<Cell>)}
-              </tr>
-            );
-          }, answers)}
+        <tbody>
+          {solution &&
+            withIndex((row, y) => {
+              return (
+                <tr className="row" key={y}>
+                  {withIndex((cell, x) => {
+                    return (
+                      <TableCell
+                        key={`${x}.${y}`}
+                        x={x}
+                        y={y}
+                        clueKey={(cell as Cell).clueKey}
+                        isBlank={(cell as Cell).blank}
+                        isSelected={
+                          !!cursor && cursor.x === x && cursor.y === y
+                        }
+                        onClick={onCellClick}
+                      />
+                    );
+                  }, row as Array<Cell>)}
+                </tr>
+              );
+            }, solution)}
+        </tbody>
       </table>
-    </>
+    </div>
   );
 };
 
