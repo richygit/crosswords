@@ -3,11 +3,10 @@ import { ClueGroup } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import "./Crossword.scss";
 import TableCell from "./TableCell";
-
-export type Matrix = Array<Array<Cell>>;
+import { AnswerMatrix, Coords, SolutionMatrix } from "./Matrix";
 
 interface CrosswordProps {
-  matrix: Matrix;
+  matrix: SolutionMatrix;
   cluesAcross: ClueGroup;
   cluesDown: ClueGroup;
 }
@@ -21,29 +20,35 @@ export interface Cell {
   yClueNo: number | null;
 }
 
-interface Coords {
-  x: number;
-  y: number;
-}
-
 const Crossword: React.FC<CrosswordProps> = ({
   matrix: solution,
   cluesAcross,
   cluesDown,
 }) => {
-  const [answers, setAnswers] = useState<Matrix | null>(null);
+  const [answers, setAnswers] = useState<AnswerMatrix | null>(null);
   const [cursor, setCursor] = useState<Coords | null>(null);
+  const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
+  const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
 
   useEffect(() => {
     if (R.isNil(answers)) {
       // init user matrix
-      const dimx = solution[0].length;
-      const dimy = solution.length;
-      setAnswers(R.range(0, dimy).map((row) => Array(dimx)));
+      setAnswers(new AnswerMatrix(solution));
     }
   }, [solution, answers]);
 
-  const withIndex = R.addIndex(R.map);
+  useEffect(() => {
+    //if the cursor changes, update the selected clueNo
+    if (R.isNil(cursor)) {
+      //reset the selected clueNos
+      setXClueNoSelected(null);
+      setYClueNoSelected(null);
+      return;
+    }
+
+    //cursor is selected, check if we can set the selected clueNos
+    const selectedCell = solution.getCell(cursor);
+  }, [cursor]);
 
   const onCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -70,27 +75,33 @@ const Crossword: React.FC<CrosswordProps> = ({
       <table className="crossword__matrix">
         <tbody>
           {solution &&
-            withIndex((row, y) => {
+            R.map((y) => {
               return (
                 <tr className="row" key={y}>
-                  {withIndex((cell, x) => {
+                  {R.map((x) => {
+                    const cell = solution.getCell({ x, y } as Coords);
+                    if (R.isNil(cell)) {
+                      console.error(`Can't find cell in solution: ${x}, ${y}`);
+                      return "error";
+                    }
+
                     return (
                       <TableCell
                         key={`${x}.${y}`}
                         x={x}
                         y={y}
-                        clueKey={(cell as Cell).clueKey}
-                        isBlank={(cell as Cell).isBlank}
+                        clueKey={cell.clueKey}
+                        isBlank={cell.isBlank}
                         isSelected={
                           !!cursor && cursor.x === x && cursor.y === y
                         }
                         onClick={onCellClick}
                       />
                     );
-                  }, row as Array<Cell>)}
+                  }, R.range(0, solution.dimX()))}
                 </tr>
               );
-            }, solution)}
+            }, R.range(0, solution.dimY()))}
         </tbody>
       </table>
     </div>

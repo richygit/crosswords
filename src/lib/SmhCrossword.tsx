@@ -1,16 +1,18 @@
-import { Cell, Matrix } from "../components/Crossword";
+import { Cell } from "../components/Crossword";
 import * as R from "ramda";
+import { Coords, SolutionMatrix } from "../components/Matrix";
 
 export interface ClueGroup {
   [key: string]: [String, number]; //array tuple
 }
 
 class SmhCrossword {
-  public matrix: Matrix;
+  public matrix: SolutionMatrix;
   public cluesAcross: any;
   public cluesDown: any;
   constructor(dom: Document) {
     this.matrix = this.readMatrix(dom);
+    this.setMatrixClues();
     const [across, down] = this.readClues(dom);
     this.cluesAcross = across; //{ref -> [clue, letter count]}
     this.cluesDown = down;
@@ -18,95 +20,90 @@ class SmhCrossword {
     // window.dom = dom;
   }
 
-  setClueConfig(matrix: Matrix): Matrix {
+  private isActiveCell = (coords: Coords) => {
+    const cell = this.matrix.getCell(coords);
+    return !R.isNil(cell) && !cell.isBlank;
+  };
+
+  //returns true if this is a starting cell
+  private checkCell = (
+    cell: Cell | null,
+    coords: Coords,
+    key: number
+  ): boolean => {
+    let isStartingCell = false;
+
+    if (R.isNil(cell)) {
+      return isStartingCell;
+    }
+    const x = coords.x;
+    const y = coords.y;
+
+    if (cell.isBlank) {
+      return isStartingCell;
+    }
+
+    if (!this.isActiveCell({ x, y } as Coords)) {
+      return isStartingCell;
+    }
+
+    // horizontal check - there's no active cell to the left
+    if (!this.isActiveCell({ x: x - 1, y } as Coords)) {
+      if (this.isActiveCell({ x: x + 1, y } as Coords)) {
+        // if cell has no cell to left but has a cell to the right, then it's a clue start
+        cell.isStart = true;
+        isStartingCell = true;
+        cell.clueKey = key;
+        cell.xClueNo = key;
+      }
+    } else {
+      //there's an active cell to the left - copy the xClueKey
+      const left = this.matrix.getCell({ x: x - 1, y });
+      cell.xClueNo = left ? left.xClueNo : null;
+    }
+
+    // vertical key check
+    if (!this.isActiveCell({ x, y: y - 1 } as Coords)) {
+      //no cell above
+
+      if (this.isActiveCell({ x, y: y + 1 } as Coords)) {
+        //if there is also a cell below, then this is a clue start
+        cell.isStart = true;
+        isStartingCell = true;
+        cell.clueKey = key;
+        cell.yClueNo = key;
+      }
+    } else {
+      //there's an active cell above - copy the yClueKey
+      const above = this.matrix.getCell({ x, y: y - 1 });
+      cell.yClueNo = above ? above.yClueNo : null;
+    }
+
+    //increment at the end so we don't double count starting in both directions for the same cell
+    return isStartingCell;
+  };
+
+  private setMatrixClues = () => {
     //set the clue keys based on blanks
     let key = 1;
-    const withIndex = R.addIndex(R.map);
 
-    const lowerBound = R.flip(R.gte)(0);
+    R.forEach((y) => {
+      R.forEach((x) => {
+        const coords = { x, y } as Coords;
+        const isStartingCell = this.checkCell(
+          this.matrix.getCell(coords),
+          coords,
+          key
+        );
+        key = isStartingCell ? key + 1 : key;
+      }, R.range(0, this.matrix.dimX()));
+    }, R.range(0, this.matrix.dimY()));
 
-    const isActiveCell = (x: number, y: number) => {
-      return (
-        lowerBound(x) &&
-        R.lt(x, matrix[0].length) &&
-        lowerBound(y) &&
-        R.lt(y, matrix.length) &&
-        !matrix[y][x].isBlank
-      );
-    };
+    console.log(this.matrix);
+  };
 
-    const getCell = (x: number, y: number): Cell | null => {
-      if (!isActiveCell(x, y)) {
-        return null;
-      }
-      return matrix[y][x];
-    };
-
-    const checkCell = (cell: Cell, x: number, y: number) => {
-      if (cell.isBlank) {
-        return;
-      }
-
-      if (!isActiveCell(x, y)) {
-        return;
-      }
-
-      let isStartingCell = false;
-
-      // horizontal check - there's no active cell to the left
-      if (!isActiveCell(x - 1, y)) {
-        if (isActiveCell(x + 1, y)) {
-          // if cell has no cell to left but has a cell to the right, then it's a clue start
-          cell.isStart = true;
-          isStartingCell = true;
-          cell.clueKey = key;
-          cell.xClueNo = key;
-        }
-      } else {
-        //there's an active cell to the left - copy the xClueKey
-        const left = getCell(x - 1, y);
-        cell.xClueNo = left ? left.xClueNo : null;
-      }
-
-      // vertical key check
-      if (!isActiveCell(x, y - 1)) {
-        //no cell above
-
-        if (isActiveCell(x, y + 1)) {
-          //if there is also a cell below, then this is a clue start
-          cell.isStart = true;
-          isStartingCell = true;
-          cell.clueKey = key;
-          cell.yClueNo = key;
-        }
-      } else {
-        //there's an active cell above - copy the yClueKey
-        const above = getCell(x, y - 1);
-        cell.yClueNo = above ? above.yClueNo : null;
-      }
-
-      //increment at the end so we don't double count starting in both directions for the same cell
-      if (isStartingCell) {
-        key += 1;
-      }
-    };
-
-    //check all the cells
-    withIndex(
-      (row, y) =>
-        withIndex(
-          (cell, x) => checkCell(cell as Cell, x, y),
-          row as Array<Cell>
-        ),
-      matrix
-    );
-
-    console.log(matrix);
-    return matrix;
-  }
-
-  readMatrix(dom: Document): Matrix {
-    const matrix: Matrix = [];
+  private readMatrix(dom: Document): SolutionMatrix {
+    const data: Array<Array<Cell>> = [];
     const rows = dom.querySelectorAll("#crossword table.printOnly tr");
     Array.from(rows).forEach((tr) => {
       const dataRow: Array<Cell> = [];
@@ -122,13 +119,13 @@ class SmhCrossword {
           yClueNo: null,
         });
       });
-      matrix.push(dataRow);
+      data.push(dataRow);
     });
 
-    return this.setClueConfig(matrix);
+    return new SolutionMatrix(data);
   }
 
-  readClueGroup(group: Element) {
+  private readClueGroup(group: Element) {
     const buttons: NodeListOf<Element> = group.querySelectorAll("button");
     const clues: ClueGroup = {};
 
@@ -148,7 +145,7 @@ class SmhCrossword {
     return clues;
   }
 
-  readClues(dom: Document) {
+  private readClues(dom: Document) {
     const groups: Array<Element> = Array.from(
       dom.querySelectorAll("#crossword-clues > div")
     );
