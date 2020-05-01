@@ -97,6 +97,19 @@ const Crossword: React.FC<CrosswordProps> = ({
     setCursor(coordsFromId(elem.id));
   };
 
+  const onCellKeyDown = (e: React.KeyboardEvent): void => {
+    console.log("key down: ", e.keyCode);
+    if (e.keyCode === 8) {
+      console.log("backspace pressed");
+      const target = e.target as HTMLInputElement;
+
+      if (R.isEmpty(target.value)) {
+        //allow backspace to work over empty values
+        moveCursor(target, false);
+      }
+    }
+  };
+
   const onCellInput = (e: React.FormEvent): void => {
     setCursorSetByClick(false);
 
@@ -104,7 +117,18 @@ const Crossword: React.FC<CrosswordProps> = ({
       return;
     }
 
-    const target = e.target as Element;
+    const target = e.target as HTMLInputElement;
+
+    const val = target.value;
+
+    console.log("value:", val);
+    const moveForwards = !R.isEmpty(val);
+
+    moveCursor(target, moveForwards);
+  };
+
+  const moveCursor = (target: Element, forwards: boolean) => {
+    const moveDelta = forwards ? 1 : -1;
 
     const name = target.getAttribute("name");
     if (R.isNil(name)) {
@@ -115,9 +139,9 @@ const Crossword: React.FC<CrosswordProps> = ({
     let nextCoords = null;
     //move to next cell if we can
     if (xClueNoSelected) {
-      nextCoords = { x: coords.x + 1, y: coords.y } as Coords;
+      nextCoords = { x: coords.x + moveDelta, y: coords.y } as Coords;
     } else if (yClueNoSelected) {
-      nextCoords = { x: coords.x, y: coords.y + 1 } as Coords;
+      nextCoords = { x: coords.x, y: coords.y + moveDelta } as Coords;
     } else {
       return;
     }
@@ -161,6 +185,7 @@ const Crossword: React.FC<CrosswordProps> = ({
                         }
                         onClick={onCellClick}
                         onInput={onCellInput}
+                        onKeyDown={onCellKeyDown}
                       />
                     );
                   }, R.range(0, solution.dimX()))}

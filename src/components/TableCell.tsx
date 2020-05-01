@@ -11,6 +11,7 @@ interface Props {
   isSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
   onInput: (e: React.FormEvent) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 const TableCell: React.FC<Props> = ({
@@ -22,6 +23,7 @@ const TableCell: React.FC<Props> = ({
   isSelected,
   onClick,
   onInput,
+  onKeyDown,
 }) => {
   const tdClass = classNames({
     cell: true,
@@ -46,6 +48,7 @@ const TableCell: React.FC<Props> = ({
         type="text"
         maxLength={1}
         onInput={onInput}
+        onKeyDown={onKeyDown}
       />
       <span>{clueKey}</span>
     </td>
