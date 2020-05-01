@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { ClueGroup } from "../lib/SmhCrossword";
+import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import "./Crossword.scss";
 import TableCell from "./TableCell";
 import { AnswerMatrix, Coords, SolutionMatrix } from "./Matrix";
+import ClueGroup from "./ClueGroup";
 
 interface CrosswordProps {
   matrix: SolutionMatrix;
-  cluesAcross: ClueGroup;
-  cluesDown: ClueGroup;
+  cluesAcross: ClueGroupData;
+  cluesDown: ClueGroupData;
 }
 
 enum Direction {
@@ -223,46 +224,60 @@ const Crossword: React.FC<CrosswordProps> = ({
   };
 
   return (
-    <div style={{ margin: "0 auto" }}>
+    <div>
       <h1>Puzzle cds or rows transformed (9)</h1>
-      <table className="crossword__matrix">
-        <tbody>
-          {solution &&
-            R.map((y) => {
-              return (
-                <tr className="row" key={y}>
-                  {R.map((x) => {
-                    const cell = solution.getCell({ x, y } as Coords);
-                    if (R.isNil(cell)) {
-                      console.error(`Can't find cell in solution: ${x}, ${y}`);
-                      return "error";
-                    }
+      <div className="matrix-container">
+        <table className="crossword__matrix">
+          <tbody>
+            {solution &&
+              R.map((y) => {
+                return (
+                  <tr className="row" key={y}>
+                    {R.map((x) => {
+                      const cell = solution.getCell({ x, y } as Coords);
+                      if (R.isNil(cell)) {
+                        console.error(
+                          `Can't find cell in solution: ${x}, ${y}`
+                        );
+                        return "error";
+                      }
 
-                    return (
-                      <TableCell
-                        key={`${x}.${y}`}
-                        x={x}
-                        y={y}
-                        clueKey={cell.clueKey}
-                        isBlank={cell.isBlank}
-                        isCursor={!!cursor && cursor.x === x && cursor.y === y}
-                        isSelected={
-                          (cell.xClueNo === xClueNoSelected &&
-                            !R.isNil(xClueNoSelected)) ||
-                          (cell.yClueNo === yClueNoSelected &&
-                            !R.isNil(yClueNoSelected))
-                        }
-                        onClick={onCellClick}
-                        onInput={onCellInput}
-                        onKeyDown={onCellKeyDown}
-                      />
-                    );
-                  }, R.range(0, solution.dimX()))}
-                </tr>
-              );
-            }, R.range(0, solution.dimY()))}
-        </tbody>
-      </table>
+                      return (
+                        <TableCell
+                          key={`${x}.${y}`}
+                          x={x}
+                          y={y}
+                          clueKey={cell.clueKey}
+                          isBlank={cell.isBlank}
+                          isCursor={
+                            !!cursor && cursor.x === x && cursor.y === y
+                          }
+                          isSelected={
+                            (cell.xClueNo === xClueNoSelected &&
+                              !R.isNil(xClueNoSelected)) ||
+                            (cell.yClueNo === yClueNoSelected &&
+                              !R.isNil(yClueNoSelected))
+                          }
+                          onClick={onCellClick}
+                          onInput={onCellInput}
+                          onKeyDown={onCellKeyDown}
+                        />
+                      );
+                    }, R.range(0, solution.dimX()))}
+                  </tr>
+                );
+              }, R.range(0, solution.dimY()))}
+          </tbody>
+        </table>
+      </div>
+      <div className="clues">
+        <div className="across">
+          <ClueGroup clues={cluesAcross} direction="Across" />
+        </div>
+        <div className="down">
+          <ClueGroup clues={cluesDown} direction="Down" />
+        </div>
+      </div>
     </div>
   );
 };

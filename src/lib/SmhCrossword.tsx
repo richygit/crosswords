@@ -2,8 +2,11 @@ import { Cell } from "../components/Crossword";
 import * as R from "ramda";
 import { Coords, SolutionMatrix } from "../components/Matrix";
 
-export interface ClueGroup {
-  [key: string]: [String, number]; //array tuple
+export interface ClueGroupData {
+  // clue key no =>  [clue text, word char count]
+  [key: number]: [string, number]; //array tuple
+  //returns the keys of the object
+  keys: () => Array<string>;
 }
 
 class SmhCrossword {
@@ -127,18 +130,22 @@ class SmhCrossword {
 
   private readClueGroup(group: Element) {
     const buttons: NodeListOf<Element> = group.querySelectorAll("button");
-    const clues: ClueGroup = {};
+    const clues: ClueGroupData = {
+      keys: function () {
+        return R.without(["keys"], Object.keys(this)); //don't include this function in the list
+      },
+    };
 
     Array.from(buttons).forEach((btn) => {
-      const ref: String = btn.getAttribute("data-position")!;
+      const ref: string = btn.getAttribute("data-position")!;
       const clueText = btn.querySelector("span:last-child")!.textContent!;
       const sep = clueText!.lastIndexOf("(");
       if (sep >= 0) {
         const text = clueText!.slice(0, sep).trim();
         const len = clueText!.slice(sep, -1).replace(/[^\d]/g, "");
-        clues[ref.toString()] = [text, Number.parseInt(len)];
+        clues[Number.parseInt(ref)] = [text, Number.parseInt(len)];
       } else {
-        clues[ref.toString()] = [clueText, -1];
+        clues[Number.parseInt(ref)] = [clueText, -1];
       }
     });
 

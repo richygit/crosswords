@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import FileUploader from "./FileUploader";
-import SmhCrossword, { ClueGroup } from "../lib/SmhCrossword";
+import SmhCrossword, { ClueGroupData } from "../lib/SmhCrossword";
 import Crossword from "./Crossword";
 import * as R from "ramda";
 import { SolutionMatrix } from "./Matrix";
@@ -10,8 +10,8 @@ const Home: React.FC = () => {
 
   const fileReader = useRef<FileReader | null>(null);
   const [matrix, setMatrix] = useState<SolutionMatrix | null>(null);
-  const [cluesAcross, setCluesAcross] = useState<ClueGroup | null>(null);
-  const [cluesDown, setCluesDown] = useState<ClueGroup | null>(null);
+  const [cluesAcross, setCluesAcross] = useState<ClueGroupData | null>(null);
+  const [cluesDown, setCluesDown] = useState<ClueGroupData | null>(null);
 
   const onFileRead = (e: any) => {
     if (R.isNil(fileReader.current)) {
