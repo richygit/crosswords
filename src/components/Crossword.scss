@@ -1,41 +1,46 @@
 .crossword__matrix {
-    border-collapse: collapse;
-    height: 552px;
-    width: 552px;
+  border-collapse: collapse;
+  height: 552px;
+  width: 552px;
 
-    .cell {
-        border: 1px solid #000;
-        position: relative;
-    }
+  .cell {
+    border: 1px solid #000;
+    position: relative;
+  }
 
-    .blank, td.selected.blank {
-        background-color: #000;
-    }
+  .blank,
+  td.selected.blank,
+  td.cursor.blank {
+    background-color: #000;
+  }
 
-    .cell input {
-        height: 30px;
-        width: 30px;
-        border: 0;
-        padding: 0;
-        background-color: rgba(0,0,0,0);
-        font-size: 1.8em;
-        text-align: center;
-        text-transform: uppercase;
-        font-weight: 700;
-        user-select: none;
-        cursor: pointer;
-        caret-color: transparent;
-    }
+  .cell input {
+    height: 30px;
+    width: 30px;
+    border: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    font-size: 1.8em;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 700;
+    user-select: none;
+    cursor: pointer;
+    caret-color: transparent;
+  }
 
-    .cell span {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        font-size: 50%;
-    }
+  .cell span {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 50%;
+  }
 
+  td.cursor,
+  td.cursor.selected {
+    background-color: rgba(255, 187, 0, 0.3);
+  }
   td.selected {
-      background-color: rgba(255, 187, 00, 0.3);
+    background-color: rgba(200, 130, 0, 0.2);
   }
 }
-

@@ -7,6 +7,7 @@ interface Props {
   y: number;
   clueKey: number | null;
   isBlank: boolean;
+  isCursor: boolean;
   isSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
 }
@@ -16,12 +17,14 @@ const TableCell: React.FC<Props> = ({
   y,
   clueKey,
   isBlank,
+  isCursor,
   isSelected,
   onClick,
 }) => {
   const tdClass = classNames({
     cell: true,
     blank: isBlank,
+    cursor: isCursor,
     selected: isSelected,
   });
 

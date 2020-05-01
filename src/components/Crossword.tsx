@@ -48,7 +48,24 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     //cursor is selected, check if we can set the selected clueNos
     const selectedCell = solution.getCell(cursor);
-  }, [cursor]);
+    if (R.isNil(selectedCell)) {
+      return;
+    }
+
+    const xClueNo = selectedCell.xClueNo;
+    const yClueNo = selectedCell.yClueNo;
+
+    if (!R.isNil(xClueNo) && R.isNil(yClueNo)) {
+      setXClueNoSelected(xClueNo);
+      setYClueNoSelected(null);
+    } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
+      setXClueNoSelected(null);
+      setYClueNoSelected(yClueNo);
+    } else {
+      setXClueNoSelected(null);
+      setYClueNoSelected(null);
+    }
+  }, [solution, cursor]);
 
   const onCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -92,8 +109,12 @@ const Crossword: React.FC<CrosswordProps> = ({
                         y={y}
                         clueKey={cell.clueKey}
                         isBlank={cell.isBlank}
+                        isCursor={!!cursor && cursor.x === x && cursor.y === y}
                         isSelected={
-                          !!cursor && cursor.x === x && cursor.y === y
+                          (cell.xClueNo === xClueNoSelected &&
+                            !R.isNil(xClueNoSelected)) ||
+                          (cell.yClueNo === yClueNoSelected &&
+                            !R.isNil(yClueNoSelected))
                         }
                         onClick={onCellClick}
                       />
