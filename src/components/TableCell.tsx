@@ -37,6 +37,10 @@ const TableCell: React.FC<Props> = ({
   useEffect(() => {
     if (isCursor && inputField) {
       inputField.current?.focus();
+      inputField.current?.setSelectionRange(
+        0,
+        inputField.current?.value.length
+      );
     }
   }, [isCursor]);
 

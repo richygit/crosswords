@@ -27,7 +27,12 @@
     user-select: none;
     cursor: pointer;
     caret-color: transparent;
+
+    &::selection {
+      background: transparent;
+    }
   }
+
 
   .cell span {
     position: absolute;
