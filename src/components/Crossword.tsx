@@ -78,6 +78,15 @@ const Crossword: React.FC<CrosswordProps> = ({
     } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
       setXClueNoSelected(null);
       setYClueNoSelected(yClueNo);
+    } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
+      // both are selected, alternate direction each click
+      if (R.isNil(xClueNoSelected)) {
+        setXClueNoSelected(xClueNo);
+        setYClueNoSelected(null);
+      } else {
+        setXClueNoSelected(null);
+        setYClueNoSelected(yClueNo);
+      }
     } else {
       setXClueNoSelected(null);
       setYClueNoSelected(null);
