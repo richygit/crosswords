@@ -99,9 +99,11 @@ const Crossword: React.FC<CrosswordProps> = ({
 
   const onCellKeyDown = (e: React.KeyboardEvent): void => {
     console.log("key down: ", e.keyCode);
+    const target = e.target as HTMLInputElement;
+    target.setSelectionRange(0, target.value.length);
+
     if (e.keyCode === 8) {
       console.log("backspace pressed");
-      const target = e.target as HTMLInputElement;
 
       if (R.isEmpty(target.value)) {
         //allow backspace to work over empty values
