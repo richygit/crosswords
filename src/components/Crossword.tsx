@@ -29,6 +29,7 @@ const Crossword: React.FC<CrosswordProps> = ({
   const [cursor, setCursor] = useState<Coords | null>(null);
   const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
   const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
+  const [cursorSetByClick, setCursorSetByClick] = useState<boolean>(false);
 
   useEffect(() => {
     if (R.isNil(answers)) {
@@ -52,6 +53,15 @@ const Crossword: React.FC<CrosswordProps> = ({
       return;
     }
 
+    updateSelection(selectedCell);
+  }, [solution, cursor]);
+
+  const updateSelection = (selectedCell: Cell) => {
+    if (!cursorSetByClick && (xClueNoSelected || yClueNoSelected)) {
+      //don't update selection if the
+      return;
+    }
+
     const xClueNo = selectedCell.xClueNo;
     const yClueNo = selectedCell.yClueNo;
 
@@ -65,7 +75,14 @@ const Crossword: React.FC<CrosswordProps> = ({
       setXClueNoSelected(null);
       setYClueNoSelected(null);
     }
-  }, [solution, cursor]);
+  };
+
+  const coordsFromId = (id: string): Coords => {
+    const coords = id.split(".");
+    const x = Number.parseInt(coords[0]);
+    const y = Number.parseInt(coords[1]);
+    return { x, y } as Coords;
+  };
 
   const onCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -75,14 +92,40 @@ const Crossword: React.FC<CrosswordProps> = ({
     if (elem && elem.nodeName !== "TD") {
       elem = elem.parentElement as Element;
     }
-    const coords = elem.id.split(".");
 
-    console.log("coords: ", coords);
+    setCursorSetByClick(true);
+    setCursor(coordsFromId(elem.id));
+  };
 
-    if (coords) {
-      const x = Number.parseInt(coords[0]);
-      const y = Number.parseInt(coords[1]);
-      setCursor({ x, y } as Coords);
+  const onCellInput = (e: React.FormEvent): void => {
+    setCursorSetByClick(false);
+
+    if (R.isNil(cursor)) {
+      return;
+    }
+
+    const target = e.target as Element;
+
+    const name = target.getAttribute("name");
+    if (R.isNil(name)) {
+      return;
+    }
+    const coords = coordsFromId(name);
+
+    let nextCoords = null;
+    //move to next cell if we can
+    if (xClueNoSelected) {
+      nextCoords = { x: coords.x + 1, y: coords.y } as Coords;
+    } else if (yClueNoSelected) {
+      nextCoords = { x: coords.x, y: coords.y + 1 } as Coords;
+    } else {
+      return;
+    }
+
+    const next = solution.getCell(nextCoords);
+
+    if (!R.isNil(next) && !next.isBlank) {
+      setCursor(nextCoords);
     }
   };
 
@@ -117,6 +160,7 @@ const Crossword: React.FC<CrosswordProps> = ({
                             !R.isNil(yClueNoSelected))
                         }
                         onClick={onCellClick}
+                        onInput={onCellInput}
                       />
                     );
                   }, R.range(0, solution.dimX()))}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import classNames from "classnames";
 import { Cell } from "./Crossword";
 
@@ -10,6 +10,7 @@ interface Props {
   isCursor: boolean;
   isSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
+  onInput: (e: React.FormEvent) => void;
 }
 
 const TableCell: React.FC<Props> = ({
@@ -20,6 +21,7 @@ const TableCell: React.FC<Props> = ({
   isCursor,
   isSelected,
   onClick,
+  onInput,
 }) => {
   const tdClass = classNames({
     cell: true,
@@ -28,9 +30,23 @@ const TableCell: React.FC<Props> = ({
     selected: isSelected,
   });
 
+  const inputField = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isCursor && inputField) {
+      inputField.current?.focus();
+    }
+  }, [isCursor]);
+
   return (
     <td className={tdClass} onClick={onClick} id={`${x}.${y}`}>
-      <input name={`${x}-${y}`} type="text" maxLength={1} />
+      <input
+        ref={inputField}
+        name={`${x}.${y}`}
+        type="text"
+        maxLength={1}
+        onInput={onInput}
+      />
       <span>{clueKey}</span>
     </td>
   );
