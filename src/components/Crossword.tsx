@@ -13,9 +13,12 @@ interface CrosswordProps {
 }
 
 export interface Cell {
-  clueKey: number | null;
+  clueKey: number | null; // the number to display
   answer: string | null;
-  blank: boolean;
+  isBlank: boolean;
+  isStart: boolean;
+  xClueNo: number | null;
+  yClueNo: number | null;
 }
 
 interface Coords {
@@ -77,7 +80,7 @@ const Crossword: React.FC<CrosswordProps> = ({
                         x={x}
                         y={y}
                         clueKey={(cell as Cell).clueKey}
-                        isBlank={(cell as Cell).blank}
+                        isBlank={(cell as Cell).isBlank}
                         isSelected={
                           !!cursor && cursor.x === x && cursor.y === y
                         }

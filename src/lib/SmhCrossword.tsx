@@ -18,7 +18,7 @@ class SmhCrossword {
     // window.dom = dom;
   }
 
-  setClueKeys(matrix: Matrix): Matrix {
+  setClueConfig(matrix: Matrix): Matrix {
     //set the clue keys based on blanks
     let key = 1;
     const withIndex = R.addIndex(R.map);
@@ -31,12 +31,19 @@ class SmhCrossword {
         R.lt(x, matrix[0].length) &&
         lowerBound(y) &&
         R.lt(y, matrix.length) &&
-        !matrix[y][x].blank
+        !matrix[y][x].isBlank
       );
     };
 
-    const cellCheck = (cell: Cell, x: number, y: number) => {
-      if (cell.blank) {
+    const getCell = (x: number, y: number): Cell | null => {
+      if (!isActiveCell(x, y)) {
+        return null;
+      }
+      return matrix[y][x];
+    };
+
+    const checkCell = (cell: Cell, x: number, y: number) => {
+      if (cell.isBlank) {
         return;
       }
 
@@ -44,26 +51,51 @@ class SmhCrossword {
         return;
       }
 
-      // horizontal key check
-      // if cell has no cell to left and cell to the right, then it's a key
-      if (!isActiveCell(x - 1, y) && isActiveCell(x + 1, y)) {
-        cell.clueKey = key;
-        key += 1;
-        return;
+      let isStartingCell = false;
+
+      // horizontal check - there's no active cell to the left
+      if (!isActiveCell(x - 1, y)) {
+        if (isActiveCell(x + 1, y)) {
+          // if cell has no cell to left but has a cell to the right, then it's a clue start
+          cell.isStart = true;
+          isStartingCell = true;
+          cell.clueKey = key;
+          cell.xClueNo = key;
+        }
+      } else {
+        //there's an active cell to the left - copy the xClueKey
+        const left = getCell(x - 1, y);
+        cell.xClueNo = left ? left.xClueNo : null;
       }
 
       // vertical key check
-      // if cell has no cell above, but cell below, then it's a key
-      if (!isActiveCell(x, y - 1) && isActiveCell(x, y + 1)) {
-        cell.clueKey = key;
+      if (!isActiveCell(x, y - 1)) {
+        //no cell above
+
+        if (isActiveCell(x, y + 1)) {
+          //if there is also a cell below, then this is a clue start
+          cell.isStart = true;
+          isStartingCell = true;
+          cell.clueKey = key;
+          cell.yClueNo = key;
+        }
+      } else {
+        //there's an active cell above - copy the yClueKey
+        const above = getCell(x, y - 1);
+        cell.yClueNo = above ? above.yClueNo : null;
+      }
+
+      //increment at the end so we don't double count starting in both directions for the same cell
+      if (isStartingCell) {
         key += 1;
-        return;
       }
     };
+
+    //check all the cells
     withIndex(
       (row, y) =>
         withIndex(
-          (cell, x) => cellCheck(cell as Cell, x, y),
+          (cell, x) => checkCell(cell as Cell, x, y),
           row as Array<Cell>
         ),
       matrix
@@ -83,14 +115,17 @@ class SmhCrossword {
         const txt = td.textContent;
         return dataRow.push({
           answer: txt,
-          blank: !R.isNil(txt) && txt.trim().length === 0,
+          isBlank: !R.isNil(txt) && txt.trim().length === 0,
           clueKey: null,
+          isStart: false,
+          xClueNo: null,
+          yClueNo: null,
         });
       });
       matrix.push(dataRow);
     });
 
-    return this.setClueKeys(matrix);
+    return this.setClueConfig(matrix);
   }
 
   readClueGroup(group: Element) {
