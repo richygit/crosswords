@@ -11,6 +11,13 @@ interface CrosswordProps {
   cluesDown: ClueGroup;
 }
 
+enum Direction {
+  LEFT,
+  UP,
+  RIGHT,
+  DOWN,
+}
+
 export interface Cell {
   clueKey: number | null; // the number to display
   answer: string | null;
@@ -97,18 +104,69 @@ const Crossword: React.FC<CrosswordProps> = ({
     setCursor(coordsFromId(elem.id));
   };
 
+  const moveCursorDirection = (direction: Direction) => {
+    if (R.isNil(cursor)) {
+      return;
+    }
+
+    let x = cursor.x;
+    let y = cursor.y;
+
+    switch (direction) {
+      case Direction.LEFT:
+        x -= 1;
+        break;
+      case Direction.UP:
+        y -= 1;
+        break;
+      case Direction.RIGHT:
+        x += 1;
+        break;
+      case Direction.DOWN:
+        y += 1;
+        break;
+    }
+
+    const newCoords = { x, y } as Coords;
+    const newCell = solution.getCell(newCoords);
+    if (!R.isNil(newCell) && !newCell.isBlank) {
+      setCursor(newCoords);
+    }
+  };
+
   const onCellKeyDown = (e: React.KeyboardEvent): void => {
     console.log("key down: ", e.keyCode);
     const target = e.target as HTMLInputElement;
     target.setSelectionRange(0, target.value.length);
 
-    if (e.keyCode === 8) {
-      console.log("backspace pressed");
+    //key codes
+    const BACKSPACE = 8,
+      LEFT = 37,
+      UP = 38,
+      RIGHT = 39,
+      DOWN = 40;
 
-      if (R.isEmpty(target.value)) {
-        //allow backspace to work over empty values
-        moveCursor(target, false);
-      }
+    switch (e.keyCode) {
+      case BACKSPACE:
+        console.log("backspace pressed");
+
+        if (R.isEmpty(target.value)) {
+          //allow backspace to work over empty values
+          moveCursor(target, false);
+        }
+        break;
+      case LEFT:
+        moveCursorDirection(Direction.LEFT);
+        break;
+      case UP:
+        moveCursorDirection(Direction.UP);
+        break;
+      case RIGHT:
+        moveCursorDirection(Direction.RIGHT);
+        break;
+      case DOWN:
+        moveCursorDirection(Direction.DOWN);
+        break;
     }
   };
 
