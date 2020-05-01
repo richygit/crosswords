@@ -30,7 +30,7 @@ const TableCell: React.FC<Props> = ({
 
   return (
     <td className={tdClass} onClick={onClick} id={`${x}.${y}`}>
-      <input name={`${x}-${y}`} type="text" />
+      <input name={`${x}-${y}`} type="text" maxLength={1} />
       <span>{clueKey}</span>
     </td>
   );
