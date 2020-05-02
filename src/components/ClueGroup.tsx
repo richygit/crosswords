@@ -1,35 +1,72 @@
 import React from "react";
 import * as R from "ramda";
 import { ClueGroupData } from "../lib/SmhCrossword";
+import { Orientation } from "./Crossword";
+import ClueRow from "./ClueRow";
+import "./ClueRow.scss";
 
 interface Props {
   clues: ClueGroupData;
-  direction: string;
+  orientation: Orientation;
+  onClick: (e: React.MouseEvent) => void;
+  xClueNoSelected: number | null;
+  yClueNoSelected: number | null;
 }
 
-const ClueGroup: React.FC<Props> = ({ clues, direction }) => {
+const ClueGroup: React.FC<Props> = ({
+  clues,
+  orientation,
+  onClick,
+  xClueNoSelected,
+  yClueNoSelected,
+}) => {
   if (R.isNil(clues)) {
     return <></>;
   }
 
+  const heading = orientation === Orientation.ACROSS ? "Across" : "Down";
+
+  const isRowSelected = (
+    xSelectedNo: number | null,
+    ySelectedNo: number | null,
+    clueOrientation: Orientation,
+    currClueKey: number
+  ) => {
+    if (clueOrientation === Orientation.ACROSS && R.isNil(xSelectedNo)) {
+      return false;
+    }
+    if (clueOrientation === Orientation.DOWN && R.isNil(ySelectedNo)) {
+      return false;
+    }
+
+    const key =
+      clueOrientation === Orientation.ACROSS ? xSelectedNo : ySelectedNo;
+
+    return key === currClueKey;
+  };
+
   return (
     <div>
-      <h2>{direction}</h2>
+      <h2>{heading}</h2>
       <ul>
         {clues &&
           clues.keys().map((key: string) => {
             if (clues.hasOwnProperty(key)) {
-              const clue = clues[Number.parseInt(key)];
-              console.log("key = ", key);
-              console.log("clues across = ", clues);
-              console.log("clue = ", clue);
+              const clueKey = Number.parseInt(key);
+              const clue = clues[clueKey];
               return (
-                <li>
-                  <span>{key}</span>
-                  <span>
-                    {clue[0]}({clue[1]})
-                  </span>
-                </li>
+                <ClueRow
+                  clueKey={clueKey}
+                  clueText={clue[0]}
+                  clueNo={clue[1]}
+                  isSelected={isRowSelected(
+                    xClueNoSelected,
+                    yClueNoSelected,
+                    orientation,
+                    clueKey
+                  )}
+                  onClick={onClick}
+                />
               );
             } else {
               return <></>;

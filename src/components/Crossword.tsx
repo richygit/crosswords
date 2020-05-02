@@ -19,6 +19,11 @@ enum Direction {
   DOWN,
 }
 
+export enum Orientation {
+  ACROSS,
+  DOWN,
+}
+
 export interface Cell {
   clueKey: number | null; // the number to display
   answer: string | null;
@@ -104,8 +109,6 @@ const Crossword: React.FC<CrosswordProps> = ({
   const onCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
     let elem: Element = e.target as Element;
-    console.log("elem:", elem);
-    console.log("elem parent:", elem.parentElement);
     if (elem && elem.nodeName !== "TD") {
       elem = elem.parentElement as Element;
     }
@@ -145,7 +148,6 @@ const Crossword: React.FC<CrosswordProps> = ({
   };
 
   const onCellKeyDown = (e: React.KeyboardEvent): void => {
-    console.log("key down: ", e.keyCode);
     const target = e.target as HTMLInputElement;
     target.setSelectionRange(0, target.value.length);
 
@@ -158,8 +160,6 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     switch (e.keyCode) {
       case BACKSPACE:
-        console.log("backspace pressed");
-
         if (R.isEmpty(target.value)) {
           //allow backspace to work over empty values
           moveCursor(target, false);
@@ -191,10 +191,13 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     const val = target.value;
 
-    console.log("value:", val);
     const moveForwards = !R.isEmpty(val);
 
     moveCursor(target, moveForwards);
+  };
+
+  const onClueClick = (e: React.MouseEvent) => {
+    //TODO
   };
 
   const moveCursor = (target: Element, forwards: boolean) => {
@@ -272,10 +275,22 @@ const Crossword: React.FC<CrosswordProps> = ({
       </div>
       <div className="clues">
         <div className="across">
-          <ClueGroup clues={cluesAcross} direction="Across" />
+          <ClueGroup
+            clues={cluesAcross}
+            orientation={Orientation.ACROSS}
+            onClick={onClueClick}
+            xClueNoSelected={xClueNoSelected}
+            yClueNoSelected={yClueNoSelected}
+          />
         </div>
         <div className="down">
-          <ClueGroup clues={cluesDown} direction="Down" />
+          <ClueGroup
+            clues={cluesDown}
+            orientation={Orientation.DOWN}
+            onClick={onClueClick}
+            xClueNoSelected={xClueNoSelected}
+            yClueNoSelected={yClueNoSelected}
+          />
         </div>
       </div>
     </div>
