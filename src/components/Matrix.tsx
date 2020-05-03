@@ -1,4 +1,4 @@
-import { Cell } from "./Crossword";
+import { Cell, Orientation } from "./Crossword";
 import * as R from "ramda";
 
 export interface Coords {
@@ -12,6 +12,30 @@ export class SolutionMatrix {
   constructor(data: Array<Array<Cell>>) {
     this.data = data;
   }
+
+  //returns the cell at the start of the clue which matches the given params
+  public findStartCoords = (
+    orientation: Orientation | null,
+    clueNo: number | null
+  ): Coords | null => {
+    if (R.isNil(orientation) || R.isNil(clueNo)) {
+      return null;
+    }
+
+    //TODO figure out how to use this - it gives a weird typescript error
+    // const findCell = R.pipe(R.propEq<string>, R.find);
+
+    const prop = orientation === Orientation.ACROSS ? "xClueNo" : "yClueNo";
+
+    const found = R.flatten(this.data).find(
+      (cell: Cell) => cell[prop] === clueNo
+    );
+
+    if (found) {
+      return { x: found.x, y: found.y };
+    }
+    return null;
+  };
 
   public getCell = (coords: Coords | null): Cell | null => {
     if (R.isNil(coords)) {

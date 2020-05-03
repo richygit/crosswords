@@ -108,20 +108,24 @@ class SmhCrossword {
   private readMatrix(dom: Document): SolutionMatrix {
     const data: Array<Array<Cell>> = [];
     const rows = dom.querySelectorAll("#crossword table.printOnly tr");
-    Array.from(rows).forEach((tr) => {
+    Array.from(rows).forEach((tr, y) => {
       const dataRow: Array<Cell> = [];
       const cells = tr.querySelectorAll("td");
-      Array.from(cells).forEach((td) => {
+
+      Array.from(cells).forEach((td, x) => {
         const txt = td.textContent;
-        return dataRow.push({
+        dataRow.push({
           answer: txt,
           isBlank: !R.isNil(txt) && txt.trim().length === 0,
           clueKey: null,
           isStart: false,
           xClueNo: null,
           yClueNo: null,
+          x,
+          y,
         });
       });
+
       data.push(dataRow);
     });
 

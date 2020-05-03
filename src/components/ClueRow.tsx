@@ -1,19 +1,23 @@
 import React from "react";
 import classNames from "classnames";
+import { Orientation } from "./Crossword";
+import { or } from "ramda";
 
 interface Props {
   clueKey: number;
   clueText: string;
-  clueNo: number;
+  clueLen: number;
   isSelected: boolean;
+  orientation: Orientation;
   onClick: (e: React.MouseEvent) => void;
 }
 
 const ClueRow: React.FC<Props> = ({
   clueKey,
   clueText,
-  clueNo,
+  clueLen,
   isSelected,
+  orientation,
   onClick,
 }) => {
   const liClass = classNames({
@@ -21,11 +25,16 @@ const ClueRow: React.FC<Props> = ({
     selected: isSelected,
   });
 
+  const dataAttributes = {
+    "data-orientation": orientation,
+    "data-clueno": clueKey,
+  };
+
   return (
-    <li className={liClass} onClick={onClick}>
+    <li className={liClass} onClick={onClick} {...dataAttributes}>
       <span>{clueKey}</span>
       <span>
-        {clueText}({clueNo})
+        {clueText}({clueLen})
       </span>
     </li>
   );

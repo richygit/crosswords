@@ -25,12 +25,14 @@ export enum Orientation {
 }
 
 export interface Cell {
-  clueKey: number | null; // the number to display
+  clueKey: number | null; // the clue number to display in the corner
   answer: string | null;
   isBlank: boolean;
   isStart: boolean;
   xClueNo: number | null;
   yClueNo: number | null;
+  x: number;
+  y: number;
 }
 
 const Crossword: React.FC<CrosswordProps> = ({
@@ -40,8 +42,15 @@ const Crossword: React.FC<CrosswordProps> = ({
 }) => {
   const [answers, setAnswers] = useState<AnswerMatrix | null>(null);
   const [cursor, setCursor] = useState<Coords | null>(null);
+  //indicates which direction the clue is pointing in if it is ambiguous
+  const [cursorDirection, setCursorDirection] = useState<Orientation>(
+    Orientation.ACROSS
+  );
   const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
   const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
+  // used to determine if the selected clue should be updated. in the case
+  // where the cursor moved by editing - we don't want to update the selection
+  // we only want to move the cursor one cell along
   const [cursorSetByClick, setCursorSetByClick] = useState<boolean>(false);
 
   useEffect(() => {
@@ -71,7 +80,7 @@ const Crossword: React.FC<CrosswordProps> = ({
 
   const updateSelection = (selectedCell: Cell) => {
     if (!cursorSetByClick && (xClueNoSelected || yClueNoSelected)) {
-      //don't update selection if the
+      //don't update selection
       return;
     }
 
@@ -85,7 +94,7 @@ const Crossword: React.FC<CrosswordProps> = ({
       setXClueNoSelected(null);
       setYClueNoSelected(yClueNo);
     } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-      // both are selected, alternate direction each click
+      // both directions possible, alternate direction each click
       if (R.isNil(xClueNoSelected)) {
         setXClueNoSelected(xClueNo);
         setYClueNoSelected(null);
@@ -114,10 +123,16 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
 
     setCursorSetByClick(true);
-    setCursor(coordsFromId(elem.id));
+    const coords = coordsFromId(elem.id);
+    // R.equals: compares attributes
+    if (R.equals(cursor, coords)) {
+      //double click means toggle direction
+      setCursorDirection((cursorDirection + 1) % 1);
+    }
+    setCursor(coords);
   };
 
-  const moveCursorDirection = (direction: Direction) => {
+  const moveCursorArrowKeys = (direction: Direction) => {
     if (R.isNil(cursor)) {
       return;
     }
@@ -166,16 +181,16 @@ const Crossword: React.FC<CrosswordProps> = ({
         }
         break;
       case LEFT:
-        moveCursorDirection(Direction.LEFT);
+        moveCursorArrowKeys(Direction.LEFT);
         break;
       case UP:
-        moveCursorDirection(Direction.UP);
+        moveCursorArrowKeys(Direction.UP);
         break;
       case RIGHT:
-        moveCursorDirection(Direction.RIGHT);
+        moveCursorArrowKeys(Direction.RIGHT);
         break;
       case DOWN:
-        moveCursorDirection(Direction.DOWN);
+        moveCursorArrowKeys(Direction.DOWN);
         break;
     }
   };
@@ -197,7 +212,33 @@ const Crossword: React.FC<CrosswordProps> = ({
   };
 
   const onClueClick = (e: React.MouseEvent) => {
-    //TODO
+    let target = e.currentTarget;
+    const orientationStr = target.getAttribute("data-orientation");
+    const clueNoStr = target.getAttribute("data-clueno");
+
+    if (R.isNil(orientationStr) || R.isNil(clueNoStr)) {
+      return;
+    }
+
+    const orientation = Number.parseInt(orientationStr);
+    const clueNo = Number.parseInt(clueNoStr);
+
+    if (R.isNil(orientation)) {
+      return;
+    }
+
+    //identify the cell we want to set the cursor to
+    const startCoords = solution.findStartCoords(
+      orientation,
+      Number.parseInt(clueNoStr)
+    );
+
+    if (startCoords) {
+      //mark  it as mouse selected
+      setCursorSetByClick(true);
+      setCursorDirection(orientation);
+      setCursor(startCoords);
+    }
   };
 
   const moveCursor = (target: Element, forwards: boolean) => {

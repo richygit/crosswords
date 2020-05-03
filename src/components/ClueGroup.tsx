@@ -56,15 +56,17 @@ const ClueGroup: React.FC<Props> = ({
               const clue = clues[clueKey];
               return (
                 <ClueRow
+                  key={clueKey}
                   clueKey={clueKey}
                   clueText={clue[0]}
-                  clueNo={clue[1]}
+                  clueLen={clue[1]}
                   isSelected={isRowSelected(
                     xClueNoSelected,
                     yClueNoSelected,
                     orientation,
                     clueKey
                   )}
+                  orientation={orientation}
                   onClick={onClick}
                 />
               );
