@@ -51,7 +51,7 @@ const Crossword: React.FC<CrosswordProps> = ({
   // used to determine if the selected clue should be updated. in the case
   // where the cursor moved by editing - we don't want to update the selection
   // we only want to move the cursor one cell along
-  const [cursorSetByClick, setCursorSetByClick] = useState<boolean>(false);
+  const [wasTyping, setWasTyping] = useState<boolean>(false);
 
   useEffect(() => {
     if (R.isNil(answers)) {
@@ -79,8 +79,8 @@ const Crossword: React.FC<CrosswordProps> = ({
   }, [solution, cursor]);
 
   const updateSelection = (selectedCell: Cell) => {
-    if (!cursorSetByClick && (xClueNoSelected || yClueNoSelected)) {
-      //don't update selection
+    if (wasTyping && (xClueNoSelected || yClueNoSelected)) {
+      // typing should not change the selection
       return;
     }
 
@@ -122,7 +122,7 @@ const Crossword: React.FC<CrosswordProps> = ({
       elem = elem.parentElement as Element;
     }
 
-    setCursorSetByClick(true);
+    setWasTyping(false);
     const coords = coordsFromId(elem.id);
     // R.equals: compares attributes
     if (R.equals(cursor, coords)) {
@@ -159,6 +159,7 @@ const Crossword: React.FC<CrosswordProps> = ({
     const newCell = solution.getCell(newCoords);
     if (!R.isNil(newCell) && !newCell.isBlank) {
       setCursor(newCoords);
+      setWasTyping(false);
     }
   };
 
@@ -196,7 +197,7 @@ const Crossword: React.FC<CrosswordProps> = ({
   };
 
   const onCellInput = (e: React.FormEvent): void => {
-    setCursorSetByClick(false);
+    setWasTyping(true);
 
     if (R.isNil(cursor)) {
       return;
@@ -234,8 +235,8 @@ const Crossword: React.FC<CrosswordProps> = ({
     );
 
     if (startCoords) {
-      //mark  it as mouse selected
-      setCursorSetByClick(true);
+      //mark it as mouse selected
+      setWasTyping(false);
       setCursorDirection(orientation);
       setCursor(startCoords);
     }
