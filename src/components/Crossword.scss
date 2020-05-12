@@ -1,3 +1,29 @@
+.crossword__container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-gap: 1rem;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: auto;
+  grid-template-areas:
+          "matrix across down";
+
+
+  ul {
+    padding: 0;
+    margin-top: 3px;
+  }
+
+  li {
+    list-style-type: none;
+  }
+}
+
+h2 {
+  margin: 0;
+}
+
 .crossword__matrix {
   border-collapse: collapse;
   height: 552px;

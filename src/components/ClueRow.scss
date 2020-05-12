@@ -1,5 +1,21 @@
 .clue__row {
-  &.selected {
+  display: flex;
+  padding: 3px 3px 10px 3px;
+  margin-bottom: 5px;
+
+  &.selected, &:hover.selected {
     background-color: rgba(183, 209, 218, 0.7);
+  }
+
+  &:hover {
+    background-color: rgba(203, 201, 173, 0.2);
+    cursor: pointer;
+  }
+
+  .key {
+    flex: 1;
+  }
+  .text {
+    flex: 8;
   }
 }

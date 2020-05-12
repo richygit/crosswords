@@ -269,53 +269,53 @@ const Crossword: React.FC<CrosswordProps> = ({
   };
 
   return (
-    <div>
+    <>
       <h1>Puzzle cds or rows transformed (9)</h1>
-      <div className="matrix-container">
-        <table className="crossword__matrix">
-          <tbody>
-            {solution &&
-              R.map((y) => {
-                return (
-                  <tr className="row" key={y}>
-                    {R.map((x) => {
-                      const cell = solution.getCell({ x, y } as Coords);
-                      if (R.isNil(cell)) {
-                        console.error(
-                          `Can't find cell in solution: ${x}, ${y}`
-                        );
-                        return "error";
-                      }
+      <div className="crossword__container">
+        <div className="matrix-container">
+          <table className="crossword__matrix">
+            <tbody>
+              {solution &&
+                R.map((y) => {
+                  return (
+                    <tr className="row" key={y}>
+                      {R.map((x) => {
+                        const cell = solution.getCell({ x, y } as Coords);
+                        if (R.isNil(cell)) {
+                          console.error(
+                            `Can't find cell in solution: ${x}, ${y}`
+                          );
+                          return "error";
+                        }
 
-                      return (
-                        <TableCell
-                          key={`${x}.${y}`}
-                          x={x}
-                          y={y}
-                          clueKey={cell.clueKey}
-                          isBlank={cell.isBlank}
-                          isCursor={
-                            !!cursor && cursor.x === x && cursor.y === y
-                          }
-                          isSelected={
-                            (cell.xClueNo === xClueNoSelected &&
-                              !R.isNil(xClueNoSelected)) ||
-                            (cell.yClueNo === yClueNoSelected &&
-                              !R.isNil(yClueNoSelected))
-                          }
-                          onClick={onCellClick}
-                          onInput={onCellInput}
-                          onKeyDown={onCellKeyDown}
-                        />
-                      );
-                    }, R.range(0, solution.dimX()))}
-                  </tr>
-                );
-              }, R.range(0, solution.dimY()))}
-          </tbody>
-        </table>
-      </div>
-      <div className="clues">
+                        return (
+                          <TableCell
+                            key={`${x}.${y}`}
+                            x={x}
+                            y={y}
+                            clueKey={cell.clueKey}
+                            isBlank={cell.isBlank}
+                            isCursor={
+                              !!cursor && cursor.x === x && cursor.y === y
+                            }
+                            isSelected={
+                              (cell.xClueNo === xClueNoSelected &&
+                                !R.isNil(xClueNoSelected)) ||
+                              (cell.yClueNo === yClueNoSelected &&
+                                !R.isNil(yClueNoSelected))
+                            }
+                            onClick={onCellClick}
+                            onInput={onCellInput}
+                            onKeyDown={onCellKeyDown}
+                          />
+                        );
+                      }, R.range(0, solution.dimX()))}
+                    </tr>
+                  );
+                }, R.range(0, solution.dimY()))}
+            </tbody>
+          </table>
+        </div>
         <div className="across">
           <ClueGroup
             clues={cluesAcross}
@@ -335,7 +335,7 @@ const Crossword: React.FC<CrosswordProps> = ({
           />
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

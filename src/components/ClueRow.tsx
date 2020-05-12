@@ -32,9 +32,9 @@ const ClueRow: React.FC<Props> = ({
 
   return (
     <li className={liClass} onClick={onClick} {...dataAttributes}>
-      <span>{clueKey}</span>
-      <span>
-        {clueText}({clueLen})
+      <span className="key">{clueKey}</span>
+      <span className="text">
+        {clueText} <span className="length">({clueLen})</span>
       </span>
     </li>
   );

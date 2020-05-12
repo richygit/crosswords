@@ -121,8 +121,7 @@ const Home: React.FC = () => {
   if (!R.isNil(matrix) && !R.isNil(cluesAcross) && !R.isNil(cluesDown)) {
     return (
       <>
-        <div>
-          <h2>matrix encoded:</h2>
+        <div className="__share">
           <input
             ref={shareRef}
             type="text"
