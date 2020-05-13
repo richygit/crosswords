@@ -43,8 +43,8 @@ const Crossword: React.FC<CrosswordProps> = ({
   const [answers, setAnswers] = useState<AnswerMatrix | null>(null);
   const [cursor, setCursor] = useState<Coords | null>(null);
   //indicates which direction the clue is pointing in if it is ambiguous
-  const [cursorDirection, setCursorDirection] = useState<Orientation>(
-    Orientation.ACROSS
+  const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
+    null
   );
   const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
   const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
@@ -66,6 +66,7 @@ const Crossword: React.FC<CrosswordProps> = ({
       //reset the selected clueNos
       setXClueNoSelected(null);
       setYClueNoSelected(null);
+      setCursorDirection(null);
       return;
     }
 
@@ -79,7 +80,7 @@ const Crossword: React.FC<CrosswordProps> = ({
   }, [solution, cursor]);
 
   const updateSelection = (selectedCell: Cell) => {
-    if (wasTyping && (xClueNoSelected || yClueNoSelected)) {
+    if (wasTyping && !R.isNil(cursorDirection)) {
       // typing should not change the selection
       return;
     }
@@ -87,24 +88,37 @@ const Crossword: React.FC<CrosswordProps> = ({
     const xClueNo = selectedCell.xClueNo;
     const yClueNo = selectedCell.yClueNo;
 
-    if (!R.isNil(xClueNo) && R.isNil(yClueNo)) {
-      setXClueNoSelected(xClueNo);
-      setYClueNoSelected(null);
-    } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-      setXClueNoSelected(null);
-      setYClueNoSelected(yClueNo);
-    } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-      // both directions possible, alternate direction each click
-      if (R.isNil(xClueNoSelected)) {
-        setXClueNoSelected(xClueNo);
-        setYClueNoSelected(null);
-      } else {
-        setXClueNoSelected(null);
-        setYClueNoSelected(yClueNo);
+    const updateCursor = (
+      x: number | null,
+      y: number | null,
+      direction: Orientation
+    ) => {
+      setXClueNoSelected(x);
+      setYClueNoSelected(y);
+      setCursorDirection(direction);
+    };
+
+    if (R.isNil(cursorDirection)) {
+      // set clue nos according to cursor direction
+      if (!R.isNil(xClueNo) && R.isNil(yClueNo)) {
+        updateCursor(xClueNo, null, Orientation.ACROSS);
+      } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
+        updateCursor(null, yClueNo, Orientation.DOWN);
+      } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
+        // both directions possible, alternate direction each click
+        if (R.isNil(xClueNoSelected)) {
+          updateCursor(xClueNo, null, Orientation.ACROSS);
+        } else {
+          updateCursor(null, yClueNo, Orientation.DOWN);
+        }
       }
     } else {
-      setXClueNoSelected(null);
-      setYClueNoSelected(null);
+      //ensure clue nos accord with cursor direction
+      if (cursorDirection === Orientation.ACROSS) {
+        updateCursor(xClueNo, null, Orientation.ACROSS);
+      } else {
+        updateCursor(null, yClueNo, Orientation.DOWN);
+      }
     }
   };
 
@@ -124,11 +138,6 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     setWasTyping(false);
     const coords = coordsFromId(elem.id);
-    // R.equals: compares attributes
-    if (R.equals(cursor, coords)) {
-      //double click means toggle direction
-      setCursorDirection((cursorDirection + 1) % 1);
-    }
     setCursor(coords);
   };
 
@@ -222,7 +231,6 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
 
     const orientation = Number.parseInt(orientationStr);
-    const clueNo = Number.parseInt(clueNoStr);
 
     if (R.isNil(orientation)) {
       return;
