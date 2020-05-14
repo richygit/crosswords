@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import "./Crossword.scss";
 import TableCell from "./TableCell";
 import { AnswerMatrix, Coords, SolutionMatrix } from "./Matrix";
 import ClueGroup from "./ClueGroup";
+// import AnswerBox from "./AnswerBox";
+import { isNil } from "ramda";
 
 interface CrosswordProps {
   matrix: SolutionMatrix;
@@ -60,6 +62,54 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   }, [solution, answers]);
 
+  const updateSelection = useCallback(
+    (selectedCell: Cell) => {
+      if (wasTyping && !R.isNil(cursorDirection)) {
+        // typing should not change the selection
+        return;
+      }
+
+      const xClueNo = selectedCell.xClueNo;
+      const yClueNo = selectedCell.yClueNo;
+
+      const updateCursor = (
+        x: number | null,
+        y: number | null,
+        direction: Orientation | null
+      ) => {
+        setXClueNoSelected(x);
+        setYClueNoSelected(y);
+        setCursorDirection(direction);
+      };
+
+      if (!R.isNil(xClueNo) && !R.isNil(yClueNo) && !R.isNil(cursorDirection)) {
+        //we only want to observe the cursor direction if the cell direction is
+        //ambiguous
+
+        if (cursorDirection === Orientation.ACROSS) {
+          updateCursor(xClueNo, null, Orientation.ACROSS);
+        } else {
+          updateCursor(null, yClueNo, Orientation.DOWN);
+        }
+        return;
+      }
+
+      if (!R.isNil(xClueNo) && R.isNil(yClueNo)) {
+        updateCursor(xClueNo, null, null);
+      } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
+        updateCursor(null, yClueNo, null);
+      } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
+        // both directions possible, alternate direction each click
+        if (R.isNil(xClueNoSelected)) {
+          updateCursor(xClueNo, null, Orientation.ACROSS);
+        } else {
+          updateCursor(null, yClueNo, Orientation.DOWN);
+        }
+      }
+    },
+    [xClueNoSelected, yClueNoSelected, cursorDirection, cursor]
+  );
+
   useEffect(() => {
     //if the cursor changes, update the selected clueNo
     if (R.isNil(cursor)) {
@@ -77,50 +127,7 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
 
     updateSelection(selectedCell);
-  }, [solution, cursor]);
-
-  const updateSelection = (selectedCell: Cell) => {
-    if (wasTyping && !R.isNil(cursorDirection)) {
-      // typing should not change the selection
-      return;
-    }
-
-    const xClueNo = selectedCell.xClueNo;
-    const yClueNo = selectedCell.yClueNo;
-
-    const updateCursor = (
-      x: number | null,
-      y: number | null,
-      direction: Orientation
-    ) => {
-      setXClueNoSelected(x);
-      setYClueNoSelected(y);
-      setCursorDirection(direction);
-    };
-
-    if (R.isNil(cursorDirection)) {
-      // set clue nos according to cursor direction
-      if (!R.isNil(xClueNo) && R.isNil(yClueNo)) {
-        updateCursor(xClueNo, null, Orientation.ACROSS);
-      } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-        updateCursor(null, yClueNo, Orientation.DOWN);
-      } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-        // both directions possible, alternate direction each click
-        if (R.isNil(xClueNoSelected)) {
-          updateCursor(xClueNo, null, Orientation.ACROSS);
-        } else {
-          updateCursor(null, yClueNo, Orientation.DOWN);
-        }
-      }
-    } else {
-      //ensure clue nos accord with cursor direction
-      if (cursorDirection === Orientation.ACROSS) {
-        updateCursor(xClueNo, null, Orientation.ACROSS);
-      } else {
-        updateCursor(null, yClueNo, Orientation.DOWN);
-      }
-    }
-  };
+  }, [solution, cursor, updateSelection]);
 
   const coordsFromId = (id: string): Coords => {
     const coords = id.split(".");
@@ -134,6 +141,11 @@ const Crossword: React.FC<CrosswordProps> = ({
     let elem: Element = e.target as Element;
     if (elem && elem.nodeName !== "TD") {
       elem = elem.parentElement as Element;
+    }
+
+    // alternate cursor direction
+    if (!isNil(cursorDirection)) {
+      setCursorDirection((cursorDirection + 1) % 2);
     }
 
     setWasTyping(false);
