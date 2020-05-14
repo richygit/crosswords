@@ -66,6 +66,47 @@ export class SolutionMatrix {
   public dimY = (): number => {
     return this.data.length;
   };
+
+  // returns the cells for the given selection
+  public getClueCells = (
+    xClueNo: number | null,
+    yClueNo: number | null
+  ): Array<Cell> | null => {
+    if (R.isNil(xClueNo) && R.isNil(yClueNo)) {
+      return null;
+    }
+
+    const cellsByClue = (
+      start: Coords | null,
+      incFn: (c: Coords) => Coords
+    ): Array<Cell> | null => {
+      let cell = this.getCell(start);
+      if (R.isNil(cell)) {
+        return null;
+      }
+
+      const ret = [];
+      while (cell?.xClueNo === xClueNo) {
+        ret.push(cell);
+        cell = this.getCell(incFn(cell));
+      }
+      return ret;
+    };
+
+    if (R.isNil(yClueNo)) {
+      // across
+      const start = this.findStartCoords(Orientation.ACROSS, xClueNo);
+      return cellsByClue(start, (c) => {
+        return { x: c.x + 1, y: c.y };
+      });
+    } else {
+      // down
+      const start = this.findStartCoords(Orientation.DOWN, yClueNo);
+      return cellsByClue(start, (c) => {
+        return { x: c.x, y: c.y + 1 };
+      });
+    }
+  };
 }
 
 export class AnswerMatrix {

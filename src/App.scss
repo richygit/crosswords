@@ -1,0 +1,17 @@
+h1 {
+  text-align: center;
+}
+
+body {
+  font-family: "Merriweather", serif;
+}
+
+.__share {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+
+  input {
+    width: 5px;
+  }
+}

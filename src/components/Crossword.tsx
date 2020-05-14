@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import "./Crossword.scss";
 import TableCell from "./TableCell";
 import { AnswerMatrix, Coords, SolutionMatrix } from "./Matrix";
 import ClueGroup from "./ClueGroup";
-// import AnswerBox from "./AnswerBox";
+import AnswerBox from "./AnswerBox";
 import { isNil } from "ramda";
 
 interface CrosswordProps {
@@ -42,9 +42,11 @@ const Crossword: React.FC<CrosswordProps> = ({
   cluesAcross,
   cluesDown,
 }) => {
+  // crossword answers
   const [answers, setAnswers] = useState<AnswerMatrix | null>(null);
   const [cursor, setCursor] = useState<Coords | null>(null);
   //indicates which direction the clue is pointing in if it is ambiguous
+  //TODO refactor to always be set when the cursor is set
   const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
     null
   );
@@ -55,6 +57,7 @@ const Crossword: React.FC<CrosswordProps> = ({
   // we only want to move the cursor one cell along
   const [wasTyping, setWasTyping] = useState<boolean>(false);
 
+  //init
   useEffect(() => {
     if (R.isNil(answers)) {
       // init user matrix
@@ -111,7 +114,6 @@ const Crossword: React.FC<CrosswordProps> = ({
   );
 
   useEffect(() => {
-    //if the cursor changes, update the selected clueNo
     if (R.isNil(cursor)) {
       //reset the selected clueNos
       setXClueNoSelected(null);
@@ -288,10 +290,58 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   };
 
+  // returns the cells for the selected solution to render in the answer box
+  const solutionCells = (): Array<Cell> | null => {
+    if (!R.isNil(xClueNoSelected) && !R.isNil(yClueNoSelected)) {
+      if (cursorDirection === Orientation.ACROSS) {
+        return solution.getClueCells(xClueNoSelected, null);
+      } else {
+        return solution.getClueCells(null, yClueNoSelected);
+      }
+    }
+
+    if (R.isNil(xClueNoSelected) && R.isNil(yClueNoSelected)) {
+      return null;
+    }
+
+    return solution.getClueCells(xClueNoSelected, yClueNoSelected);
+  };
+
+  // returns the clue text for the currently selected clue to render in the
+  // answer box
+  const selectedClueText = () => {
+    if (!R.isNil(xClueNoSelected) && R.isNil(yClueNoSelected)) {
+      return cluesAcross[xClueNoSelected];
+    }
+
+    if (R.isNil(xClueNoSelected) && !R.isNil(yClueNoSelected)) {
+      return cluesDown[yClueNoSelected];
+    }
+
+    if (!R.isNil(xClueNoSelected) && !R.isNil(yClueNoSelected)) {
+      if (cursorDirection === Orientation.ACROSS) {
+        return cluesAcross[xClueNoSelected];
+      } else {
+        return cluesDown[yClueNoSelected];
+      }
+    }
+
+    return null;
+  };
+
   return (
     <>
       <h1>Puzzle cds or rows transformed (9)</h1>
       <div className="crossword__container">
+        <div className="answer-container">
+          <AnswerBox
+            solutionCells={solutionCells()}
+            selectedClue={selectedClueText()}
+            xClueNoSelected={xClueNoSelected}
+            yClueNoSelected={yClueNoSelected}
+            cursorDirection={cursorDirection}
+          />
+        </div>
         <div className="matrix-container">
           <table className="crossword__matrix">
             <tbody>

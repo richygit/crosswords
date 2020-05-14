@@ -2,6 +2,7 @@
   display: flex;
   padding: 3px 3px 10px 3px;
   margin-bottom: 5px;
+  font-size: 0.9rem;
 
   &.selected, &:hover.selected {
     background-color: rgba(183, 209, 218, 0.7);

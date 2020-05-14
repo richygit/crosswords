@@ -1,0 +1,17 @@
+.__answer-box {
+  table {
+    border-collapse: collapse;
+  }
+
+  .clue {
+    font-size: 0.9rem;
+  }
+  .td {
+    border: 1px solid;
+
+    input {
+      height: 24px;
+      width: 24px;
+    }
+  }
+}

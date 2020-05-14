@@ -128,9 +128,9 @@ const Home: React.FC = () => {
             disabled={undefined}
             defaultValue={shareUrl}
           />
-          <button onClick={onCopyClick}>Copy</button>
+          <button onClick={onCopyClick}>Share!</button>
           {showCopyFlash && (
-            <span style={{ background: "#fbff00" }}>Copied!</span>
+            <span style={{ background: "#fbff00" }}>Link Copied!</span>
           )}
         </div>
         <Crossword

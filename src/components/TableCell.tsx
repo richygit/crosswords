@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import classNames from "classnames";
-import { Cell } from "./Crossword";
 
 interface Props {
   x: number;
