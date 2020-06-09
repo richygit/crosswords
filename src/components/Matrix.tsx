@@ -25,10 +25,10 @@ export class SolutionMatrix {
     //TODO figure out how to use this - it gives a weird typescript error
     // const findCell = R.pipe(R.propEq<string>, R.find);
 
-    const prop = orientation === Orientation.ACROSS ? "xClueNo" : "yClueNo";
+    const clueProp = orientation === Orientation.ACROSS ? "xClueNo" : "yClueNo";
 
     const found = R.flatten(this.data).find(
-      (cell: Cell) => cell[prop] === clueNo
+      (cell: Cell) => R.prop(clueProp, cell) === clueNo
     );
 
     if (found) {
@@ -67,6 +67,25 @@ export class SolutionMatrix {
     return this.data.length;
   };
 
+  private cellsByClue<K extends keyof Cell>(
+    start: Coords | null,
+    clueNo: number | null,
+    clueAttr: K,
+    incFn: (c: Coords) => Coords
+  ): Array<Cell> | null {
+    let cell = this.getCell(start);
+    if (R.isNil(cell) || R.isNil(clueNo)) {
+      return null;
+    }
+
+    const ret = [];
+    while (!R.isNil(cell) && R.prop(clueAttr, cell) === clueNo) {
+      ret.push(cell);
+      cell = this.getCell(incFn(cell));
+    }
+    return ret;
+  }
+
   // returns the cells for the given selection
   public getClueCells = (
     xClueNo: number | null,
@@ -76,33 +95,18 @@ export class SolutionMatrix {
       return null;
     }
 
-    const cellsByClue = (
-      start: Coords | null,
-      incFn: (c: Coords) => Coords
-    ): Array<Cell> | null => {
-      let cell = this.getCell(start);
-      if (R.isNil(cell)) {
-        return null;
-      }
-
-      const ret = [];
-      while (cell?.xClueNo === xClueNo) {
-        ret.push(cell);
-        cell = this.getCell(incFn(cell));
-      }
-      return ret;
-    };
-
     if (R.isNil(yClueNo)) {
       // across
       const start = this.findStartCoords(Orientation.ACROSS, xClueNo);
-      return cellsByClue(start, (c) => {
+
+      //get all cells for the given clue
+      return this.cellsByClue(start, xClueNo, "xClueNo", (c) => {
         return { x: c.x + 1, y: c.y };
       });
     } else {
       // down
       const start = this.findStartCoords(Orientation.DOWN, yClueNo);
-      return cellsByClue(start, (c) => {
+      return this.cellsByClue(start, yClueNo, "yClueNo", (c) => {
         return { x: c.x, y: c.y + 1 };
       });
     }

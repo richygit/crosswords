@@ -1,29 +1,47 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
+import * as R from "ramda";
 import classNames from "classnames";
+import { Cell, Orientation } from "./Crossword";
 
 interface Props {
-  x: number;
-  y: number;
-  clueKey: number | null;
-  isBlank: boolean;
-  isCursor: boolean;
-  isSelected: boolean;
+  cell: Cell;
+  cursor: Cell | null;
+  cursorDirection: Orientation | null;
   onClick: (e: React.MouseEvent) => void;
   onInput: (e: React.FormEvent) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 const TableCell: React.FC<Props> = ({
-  x,
-  y,
-  clueKey,
-  isBlank,
-  isCursor,
-  isSelected,
+  cell,
+  cursor,
+  cursorDirection,
   onClick,
   onInput,
   onKeyDown,
 }) => {
+  const isCursor = useMemo(() => {
+    if (R.isNil(cursor)) {
+      return false;
+    }
+
+    return cell.x === cursor.x && cell.y === cursor.y;
+  }, [cursor, cell]);
+
+  const isBlank = useMemo(() => cell.isBlank, [cell]);
+
+  const isSelected = useMemo(() => {
+    if (R.isNil(cursor) || R.isNil(cursorDirection)) {
+      return false;
+    }
+
+    if (cursorDirection === Orientation.ACROSS) {
+      return !R.isNil(cursor.xClueNo) && cursor.xClueNo === cell.xClueNo;
+    } else {
+      return !R.isNil(cursor.yClueNo) && cursor.yClueNo === cell.yClueNo;
+    }
+  }, [cell, cursor, cursorDirection]);
+
   const tdClass = classNames({
     cell: true,
     blank: isBlank,
@@ -44,16 +62,16 @@ const TableCell: React.FC<Props> = ({
   }, [isCursor]);
 
   return (
-    <td className={tdClass} onClick={onClick} id={`${x}.${y}`}>
+    <td className={tdClass} onClick={onClick} id={`${cell.x}.${cell.y}`}>
       <input
         ref={inputField}
-        name={`${x}.${y}`}
+        name={`${cell.x}.${cell.y}`}
         type="text"
         maxLength={1}
         onInput={onInput}
         onKeyDown={onKeyDown}
       />
-      <span>{clueKey}</span>
+      <span>{cell.clueKey}</span>
     </td>
   );
 };

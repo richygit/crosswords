@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
+import { isNil } from "ramda";
 import "./Crossword.scss";
 import TableCell from "./TableCell";
 import { AnswerMatrix, Coords, SolutionMatrix } from "./Matrix";
 import ClueGroup from "./ClueGroup";
 import AnswerBox from "./AnswerBox";
-import { isNil } from "ramda";
 
 interface CrosswordProps {
   matrix: SolutionMatrix;
@@ -44,14 +44,14 @@ const Crossword: React.FC<CrosswordProps> = ({
 }) => {
   // crossword answers
   const [answers, setAnswers] = useState<AnswerMatrix | null>(null);
-  const [cursor, setCursor] = useState<Coords | null>(null);
+  const [cursor, setCursor] = useState<Cell | null>(null);
   //indicates which direction the clue is pointing in if it is ambiguous
   //TODO refactor to always be set when the cursor is set
   const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
     null
   );
-  const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
-  const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
+  // const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
+  // const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
   // used to determine if the selected clue should be updated. in the case
   // where the cursor moved by editing - we don't want to update the selection
   // we only want to move the cursor one cell along
@@ -65,77 +65,55 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   }, [solution, answers]);
 
-  const updateSelection = useCallback(
-    (selectedCell: Cell) => {
-      if (wasTyping && !R.isNil(cursorDirection)) {
-        // typing should not change the selection
-        return;
-      }
-
-      const xClueNo = selectedCell.xClueNo;
-      const yClueNo = selectedCell.yClueNo;
-
-      const updateCursor = (
-        x: number | null,
-        y: number | null,
-        direction: Orientation | null
-      ) => {
-        setXClueNoSelected(x);
-        setYClueNoSelected(y);
-        setCursorDirection(direction);
-      };
-
-      if (!R.isNil(xClueNo) && !R.isNil(yClueNo) && !R.isNil(cursorDirection)) {
-        //we only want to observe the cursor direction if the cell direction is
-        //ambiguous
-
-        if (cursorDirection === Orientation.ACROSS) {
-          updateCursor(xClueNo, null, Orientation.ACROSS);
-        } else {
-          updateCursor(null, yClueNo, Orientation.DOWN);
-        }
-        return;
-      }
-
-      if (!R.isNil(xClueNo) && R.isNil(yClueNo)) {
-        updateCursor(xClueNo, null, null);
-      } else if (R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-        updateCursor(null, yClueNo, null);
-      } else if (!R.isNil(xClueNo) && !R.isNil(yClueNo)) {
-        // both directions possible, alternate direction each click
-        if (R.isNil(xClueNoSelected)) {
-          updateCursor(xClueNo, null, Orientation.ACROSS);
-        } else {
-          updateCursor(null, yClueNo, Orientation.DOWN);
-        }
-      }
-    },
-    [xClueNoSelected, yClueNoSelected, cursorDirection, cursor]
-  );
-
-  useEffect(() => {
-    if (R.isNil(cursor)) {
-      //reset the selected clueNos
-      setXClueNoSelected(null);
-      setYClueNoSelected(null);
-      setCursorDirection(null);
-      return;
-    }
-
-    //cursor is selected, check if we can set the selected clueNos
-    const selectedCell = solution.getCell(cursor);
-    if (R.isNil(selectedCell)) {
-      return;
-    }
-
-    updateSelection(selectedCell);
-  }, [solution, cursor, updateSelection]);
-
   const coordsFromId = (id: string): Coords => {
     const coords = id.split(".");
     const x = Number.parseInt(coords[0]);
     const y = Number.parseInt(coords[1]);
     return { x, y } as Coords;
+  };
+
+  // toggle the cursor direction, unless the other direction is not valid
+  const toggleCursorDirection = () => {
+    if (isNil(cursorDirection)) {
+      return;
+    }
+
+    if (
+      cursorDirection === Orientation.ACROSS &&
+      cursor &&
+      !R.isNil(cursor.yClueNo)
+    ) {
+      setCursorDirection(Orientation.DOWN);
+    } else if (
+      cursorDirection === Orientation.DOWN &&
+      cursor &&
+      !R.isNil(cursor.yClueNo)
+    ) {
+      setCursorDirection(Orientation.ACROSS);
+    }
+  };
+
+  //return false if a or b are nil
+  const isSameCell = (a: Cell | null, b: Cell | null): boolean => {
+    if (isNil(a) || isNil(b)) {
+      return false;
+    }
+    return a.x === b.x && a.y === b.y;
+  };
+
+  const updateCursorDirection = (cell: Cell | null) => {
+    if (isNil(cell)) {
+      return;
+    }
+
+    if (!isNil(cell.xClueNo)) {
+      // default to across, even if there is a Y clue number
+      setCursorDirection(Orientation.ACROSS);
+    } else if (!isNil(cell.yClueNo)) {
+      setCursorDirection(Orientation.DOWN);
+    } else {
+      setCursorDirection(null);
+    }
   };
 
   const onCellClick = (e: React.MouseEvent): void => {
@@ -145,14 +123,16 @@ const Crossword: React.FC<CrosswordProps> = ({
       elem = elem.parentElement as Element;
     }
 
-    // alternate cursor direction
-    if (!isNil(cursorDirection)) {
-      setCursorDirection((cursorDirection + 1) % 2);
-    }
-
     setWasTyping(false);
+
     const coords = coordsFromId(elem.id);
-    setCursor(coords);
+    const clickedCell = solution.getCell(coords);
+    if (isSameCell(clickedCell, cursor)) {
+      toggleCursorDirection();
+    } else {
+      setCursor(clickedCell);
+      updateCursorDirection(clickedCell);
+    }
   };
 
   const moveCursorArrowKeys = (direction: Direction) => {
@@ -178,10 +158,10 @@ const Crossword: React.FC<CrosswordProps> = ({
         break;
     }
 
-    const newCoords = { x, y } as Coords;
-    const newCell = solution.getCell(newCoords);
+    const newCell = solution.getCell({ x, y } as Coords);
     if (!R.isNil(newCell) && !newCell.isBlank) {
-      setCursor(newCoords);
+      setCursor(newCell);
+      // don't update the cursor direction
       setWasTyping(false);
     }
   };
@@ -201,7 +181,7 @@ const Crossword: React.FC<CrosswordProps> = ({
       case BACKSPACE:
         if (R.isEmpty(target.value)) {
           //allow backspace to work over empty values
-          moveCursor(target, false);
+          moveCursorAfterKeyEvent(target, false);
         }
         break;
       case LEFT:
@@ -232,7 +212,7 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     const moveForwards = !R.isEmpty(val);
 
-    moveCursor(target, moveForwards);
+    moveCursorAfterKeyEvent(target, moveForwards);
   };
 
   const onClueClick = (e: React.MouseEvent) => {
@@ -259,12 +239,12 @@ const Crossword: React.FC<CrosswordProps> = ({
     if (startCoords) {
       //mark it as mouse selected
       setWasTyping(false);
+      setCursor(solution.getCell(startCoords));
       setCursorDirection(orientation);
-      setCursor(startCoords);
     }
   };
 
-  const moveCursor = (target: Element, forwards: boolean) => {
+  const moveCursorAfterKeyEvent = (target: Element, forwards: boolean) => {
     const moveDelta = forwards ? 1 : -1;
 
     const name = target.getAttribute("name");
@@ -275,9 +255,9 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     let nextCoords = null;
     //move to next cell if we can
-    if (xClueNoSelected) {
+    if (cursorDirection === Orientation.ACROSS) {
       nextCoords = { x: coords.x + moveDelta, y: coords.y } as Coords;
-    } else if (yClueNoSelected) {
+    } else if (cursorDirection === Orientation.DOWN) {
       nextCoords = { x: coords.x, y: coords.y + moveDelta } as Coords;
     } else {
       return;
@@ -286,48 +266,48 @@ const Crossword: React.FC<CrosswordProps> = ({
     const next = solution.getCell(nextCoords);
 
     if (!R.isNil(next) && !next.isBlank) {
-      setCursor(nextCoords);
+      setCursor(next);
     }
   };
 
   // returns the cells for the selected solution to render in the answer box
-  const solutionCells = (): Array<Cell> | null => {
-    if (!R.isNil(xClueNoSelected) && !R.isNil(yClueNoSelected)) {
-      if (cursorDirection === Orientation.ACROSS) {
-        return solution.getClueCells(xClueNoSelected, null);
+  const answerBoxFields = (): [
+    Array<Cell> | null,
+    [string, number] | null,
+    string | null
+  ] => {
+    if (R.isNil(cursor)) {
+      return [null, null, null];
+    }
+
+    let solutionCells: Array<Cell> | null;
+    let clueText: [string, number] | null = null;
+    let clueKey: string | null = null;
+
+    if (cursorDirection === Orientation.ACROSS || R.isNil(cursorDirection)) {
+      solutionCells = solution.getClueCells(cursor.xClueNo, null);
+      if (R.isNil(cursor.xClueNo)) {
+        clueText = null;
+        clueKey = null;
       } else {
-        return solution.getClueCells(null, yClueNoSelected);
+        clueText = cluesAcross[cursor.xClueNo];
+        clueKey = `${cursor.xClueNo}A`;
+      }
+    } else {
+      solutionCells = solution.getClueCells(null, cursor.yClueNo);
+      if (R.isNil(cursor.yClueNo)) {
+        clueText = null;
+        clueKey = null;
+      } else {
+        clueText = cluesDown[cursor.yClueNo];
+        clueKey = `${cursor.yClueNo}D`;
       }
     }
 
-    if (R.isNil(xClueNoSelected) && R.isNil(yClueNoSelected)) {
-      return null;
-    }
-
-    return solution.getClueCells(xClueNoSelected, yClueNoSelected);
+    return [solutionCells, clueText, clueKey];
   };
 
-  // returns the clue text for the currently selected clue to render in the
-  // answer box
-  const selectedClueText = () => {
-    if (!R.isNil(xClueNoSelected) && R.isNil(yClueNoSelected)) {
-      return cluesAcross[xClueNoSelected];
-    }
-
-    if (R.isNil(xClueNoSelected) && !R.isNil(yClueNoSelected)) {
-      return cluesDown[yClueNoSelected];
-    }
-
-    if (!R.isNil(xClueNoSelected) && !R.isNil(yClueNoSelected)) {
-      if (cursorDirection === Orientation.ACROSS) {
-        return cluesAcross[xClueNoSelected];
-      } else {
-        return cluesDown[yClueNoSelected];
-      }
-    }
-
-    return null;
-  };
+  const answerBoxParams = answerBoxFields();
 
   return (
     <>
@@ -335,11 +315,9 @@ const Crossword: React.FC<CrosswordProps> = ({
       <div className="crossword__container">
         <div className="answer-container">
           <AnswerBox
-            solutionCells={solutionCells()}
-            selectedClue={selectedClueText()}
-            xClueNoSelected={xClueNoSelected}
-            yClueNoSelected={yClueNoSelected}
-            cursorDirection={cursorDirection}
+            solutionCells={answerBoxParams[0]}
+            selectedClue={answerBoxParams[1]}
+            clueKey={answerBoxParams[2]}
           />
         </div>
         <div className="matrix-container">
@@ -361,19 +339,9 @@ const Crossword: React.FC<CrosswordProps> = ({
                         return (
                           <TableCell
                             key={`${x}.${y}`}
-                            x={x}
-                            y={y}
-                            clueKey={cell.clueKey}
-                            isBlank={cell.isBlank}
-                            isCursor={
-                              !!cursor && cursor.x === x && cursor.y === y
-                            }
-                            isSelected={
-                              (cell.xClueNo === xClueNoSelected &&
-                                !R.isNil(xClueNoSelected)) ||
-                              (cell.yClueNo === yClueNoSelected &&
-                                !R.isNil(yClueNoSelected))
-                            }
+                            cell={cell}
+                            cursor={cursor}
+                            cursorDirection={cursorDirection}
                             onClick={onCellClick}
                             onInput={onCellInput}
                             onKeyDown={onCellKeyDown}
@@ -390,18 +358,16 @@ const Crossword: React.FC<CrosswordProps> = ({
           <ClueGroup
             clues={cluesAcross}
             orientation={Orientation.ACROSS}
+            cursor={cursor}
             onClick={onClueClick}
-            xClueNoSelected={xClueNoSelected}
-            yClueNoSelected={yClueNoSelected}
           />
         </div>
         <div className="down">
           <ClueGroup
             clues={cluesDown}
             orientation={Orientation.DOWN}
+            cursor={cursor}
             onClick={onClueClick}
-            xClueNoSelected={xClueNoSelected}
-            yClueNoSelected={yClueNoSelected}
           />
         </div>
       </div>

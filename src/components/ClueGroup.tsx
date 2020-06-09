@@ -1,48 +1,42 @@
-import React from "react";
+import React, { useMemo } from "react";
 import * as R from "ramda";
 import { ClueGroupData } from "../lib/SmhCrossword";
-import { Orientation } from "./Crossword";
+import { Cell, Orientation } from "./Crossword";
 import ClueRow from "./ClueRow";
 import "./ClueRow.scss";
 
 interface Props {
   clues: ClueGroupData;
   orientation: Orientation;
+  cursor: Cell | null;
   onClick: (e: React.MouseEvent) => void;
-  xClueNoSelected: number | null;
-  yClueNoSelected: number | null;
 }
 
 const ClueGroup: React.FC<Props> = ({
   clues,
   orientation,
+  cursor,
   onClick,
-  xClueNoSelected,
-  yClueNoSelected,
 }) => {
+  const cursorXNo = useMemo(() => (R.isNil(cursor) ? null : cursor.xClueNo), [
+    cursor,
+  ]);
+  const cursorYNo = useMemo(() => (R.isNil(cursor) ? null : cursor.yClueNo), [
+    cursor,
+  ]);
+
   if (R.isNil(clues)) {
     return <></>;
   }
 
   const heading = orientation === Orientation.ACROSS ? "Across" : "Down";
 
-  const isRowSelected = (
-    xSelectedNo: number | null,
-    ySelectedNo: number | null,
-    clueOrientation: Orientation,
-    currClueKey: number
-  ) => {
-    if (clueOrientation === Orientation.ACROSS && R.isNil(xSelectedNo)) {
-      return false;
-    }
-    if (clueOrientation === Orientation.DOWN && R.isNil(ySelectedNo)) {
-      return false;
+  const isRowSelected = (clueKey: number, clueOrientation: Orientation) => {
+    if (clueOrientation === Orientation.ACROSS && clueKey === cursorXNo) {
+      return true;
     }
 
-    const key =
-      clueOrientation === Orientation.ACROSS ? xSelectedNo : ySelectedNo;
-
-    return key === currClueKey;
+    return clueOrientation === Orientation.DOWN && clueKey === cursorYNo;
   };
 
   return (
@@ -60,12 +54,7 @@ const ClueGroup: React.FC<Props> = ({
                   clueKey={clueKey}
                   clueText={clue[0]}
                   clueLen={clue[1]}
-                  isSelected={isRowSelected(
-                    xClueNoSelected,
-                    yClueNoSelected,
-                    orientation,
-                    clueKey
-                  )}
+                  isSelected={isRowSelected(clueKey, orientation)}
                   orientation={orientation}
                   onClick={onClick}
                 />
