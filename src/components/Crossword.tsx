@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import { isNil } from "ramda";
@@ -43,27 +43,19 @@ const Crossword: React.FC<CrosswordProps> = ({
   cluesDown,
 }) => {
   // crossword answers
-  const [answers, setAnswers] = useState<AnswerMatrix | null>(null);
+  const [userAnswers, setUserAnswers] = useState<AnswerMatrix | null>(null);
   const [cursor, setCursor] = useState<Cell | null>(null);
-  //indicates which direction the clue is pointing in if it is ambiguous
-  //TODO refactor to always be set when the cursor is set
   const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
     null
   );
-  // const [xClueNoSelected, setXClueNoSelected] = useState<number | null>(null);
-  // const [yClueNoSelected, setYClueNoSelected] = useState<number | null>(null);
-  // used to determine if the selected clue should be updated. in the case
-  // where the cursor moved by editing - we don't want to update the selection
-  // we only want to move the cursor one cell along
-  const [wasTyping, setWasTyping] = useState<boolean>(false);
 
   //init
   useEffect(() => {
-    if (R.isNil(answers)) {
+    if (R.isNil(userAnswers)) {
       // init user matrix
-      setAnswers(new AnswerMatrix(solution));
+      setUserAnswers(new AnswerMatrix(solution));
     }
-  }, [solution, answers]);
+  }, [solution, userAnswers]);
 
   const coordsFromId = (id: string): Coords => {
     const coords = id.split(".");
@@ -123,8 +115,6 @@ const Crossword: React.FC<CrosswordProps> = ({
       elem = elem.parentElement as Element;
     }
 
-    setWasTyping(false);
-
     const coords = coordsFromId(elem.id);
     const clickedCell = solution.getCell(coords);
     if (isSameCell(clickedCell, cursor)) {
@@ -161,11 +151,11 @@ const Crossword: React.FC<CrosswordProps> = ({
     const newCell = solution.getCell({ x, y } as Coords);
     if (!R.isNil(newCell) && !newCell.isBlank) {
       setCursor(newCell);
-      // don't update the cursor direction
-      setWasTyping(false);
+      updateCursorDirection(newCell);
     }
   };
 
+  // move or backspace actions
   const onCellKeyDown = (e: React.KeyboardEvent): void => {
     const target = e.target as HTMLInputElement;
     target.setSelectionRange(0, target.value.length);
@@ -181,7 +171,7 @@ const Crossword: React.FC<CrosswordProps> = ({
       case BACKSPACE:
         if (R.isEmpty(target.value)) {
           //allow backspace to work over empty values
-          moveCursorAfterKeyEvent(target, false);
+          editCellEvent(target, false);
         }
         break;
       case LEFT:
@@ -199,9 +189,8 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   };
 
+  // typing answer event
   const onCellInput = (e: React.FormEvent): void => {
-    setWasTyping(true);
-
     if (R.isNil(cursor)) {
       return;
     }
@@ -212,7 +201,7 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     const moveForwards = !R.isEmpty(val);
 
-    moveCursorAfterKeyEvent(target, moveForwards);
+    editCellEvent(target, moveForwards);
   };
 
   const onClueClick = (e: React.MouseEvent) => {
@@ -237,14 +226,13 @@ const Crossword: React.FC<CrosswordProps> = ({
     );
 
     if (startCoords) {
-      //mark it as mouse selected
-      setWasTyping(false);
       setCursor(solution.getCell(startCoords));
       setCursorDirection(orientation);
     }
   };
 
-  const moveCursorAfterKeyEvent = (target: Element, forwards: boolean) => {
+  // called when a cell is edited. Move the cursor.
+  const editCellEvent = (target: Element, forwards: boolean) => {
     const moveDelta = forwards ? 1 : -1;
 
     const name = target.getAttribute("name");
