@@ -99,7 +99,7 @@ class SmhCrossword {
       (row: Array<string | undefined>, y) => {
         return row.map((txt: string | undefined, x) => {
           return {
-            answer: txt,
+            solution: txt,
             isBlank: R.isNil(txt),
             clueKey: null,
             isStart: false,
@@ -150,7 +150,8 @@ class SmhCrossword {
         const txt = td.textContent;
         const isBlank = R.isNil(txt) || txt.trim().length === 0;
         dataRow.push({
-          answer: txt,
+          solution: txt,
+          answer: null,
           isBlank: isBlank,
           clueKey: null,
           isStart: false,

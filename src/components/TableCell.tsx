@@ -61,6 +61,13 @@ const TableCell: React.FC<Props> = ({
     }
   }, [isCursor]);
 
+  const onCellInput = (e: React.FormEvent) => {
+    const target = e.target as HTMLInputElement;
+    cell.answer = target.value;
+
+    onInput(e);
+  };
+
   return (
     <td className={tdClass} onClick={onClick} id={`${cell.x}.${cell.y}`}>
       <input
@@ -68,7 +75,7 @@ const TableCell: React.FC<Props> = ({
         name={`${cell.x}.${cell.y}`}
         type="text"
         maxLength={1}
-        onInput={onInput}
+        onInput={onCellInput}
         onKeyDown={onKeyDown}
       />
       <span>{cell.clueKey}</span>

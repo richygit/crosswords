@@ -112,11 +112,3 @@ export class SolutionMatrix {
     }
   };
 }
-
-export class AnswerMatrix {
-  private readonly matrix: Array<Array<string | null>>;
-
-  constructor(source: SolutionMatrix) {
-    this.matrix = R.range(0, source.dimY()).map((row) => Array(source.dimX()));
-  }
-}

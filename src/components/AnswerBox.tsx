@@ -1,20 +1,16 @@
 import React from "react";
 import * as R from "ramda";
-import { Cell, Orientation } from "./Crossword";
+import { Cell } from "./Crossword";
 import "./AnswerBox.scss";
 
 interface Props {
-  solutionCells: Array<Cell> | null;
+  userAnswers: Array<Cell> | null;
   selectedClue: [string, number] | null;
   clueKey: string | null;
 }
 
-const AnswerBox: React.FC<Props> = ({
-  solutionCells,
-  selectedClue,
-  clueKey,
-}) => {
-  if (R.isNil(solutionCells) || R.isNil(selectedClue)) {
+const AnswerBox: React.FC<Props> = ({ userAnswers, selectedClue, clueKey }) => {
+  if (R.isNil(userAnswers) || R.isNil(selectedClue)) {
     return <div className="__answer-box" />;
   }
 
@@ -29,8 +25,8 @@ const AnswerBox: React.FC<Props> = ({
       <table>
         <tbody>
           <tr>
-            {solutionCells &&
-              solutionCells.map((cell) => {
+            {userAnswers &&
+              userAnswers.map((cell) => {
                 return (
                   <td className="td" key={`${cell.x}.${cell.y}`}>
                     <input

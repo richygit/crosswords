@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import { isNil } from "ramda";
 import "./Crossword.scss";
 import TableCell from "./TableCell";
-import { AnswerMatrix, Coords, SolutionMatrix } from "./Matrix";
+import { Coords, SolutionMatrix } from "./Matrix";
 import ClueGroup from "./ClueGroup";
 import AnswerBox from "./AnswerBox";
 
@@ -28,6 +28,7 @@ export enum Orientation {
 
 export interface Cell {
   clueKey: number | null; // the clue number to display in the corner
+  solution: string | null;
   answer: string | null;
   isBlank: boolean;
   isStart: boolean;
@@ -43,19 +44,10 @@ const Crossword: React.FC<CrosswordProps> = ({
   cluesDown,
 }) => {
   // crossword answers
-  const [userAnswers, setUserAnswers] = useState<AnswerMatrix | null>(null);
   const [cursor, setCursor] = useState<Cell | null>(null);
   const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
     null
   );
-
-  //init
-  useEffect(() => {
-    if (R.isNil(userAnswers)) {
-      // init user matrix
-      setUserAnswers(new AnswerMatrix(solution));
-    }
-  }, [solution, userAnswers]);
 
   const coordsFromId = (id: string): Coords => {
     const coords = id.split(".");
@@ -189,14 +181,13 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   };
 
-  // typing answer event
+  // typing solution event
   const onCellInput = (e: React.FormEvent): void => {
     if (R.isNil(cursor)) {
       return;
     }
 
     const target = e.target as HTMLInputElement;
-
     const val = target.value;
 
     const moveForwards = !R.isEmpty(val);
@@ -258,7 +249,7 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   };
 
-  // returns the cells for the selected solution to render in the answer box
+  // returns the cells for the selected solution to render in the solution box
   const answerBoxFields = (): [
     Array<Cell> | null,
     [string, number] | null,
@@ -303,7 +294,7 @@ const Crossword: React.FC<CrosswordProps> = ({
       <div className="crossword__container">
         <div className="answer-container">
           <AnswerBox
-            solutionCells={answerBoxParams[0]}
+            userAnswers={answerBoxParams[0]}
             selectedClue={answerBoxParams[1]}
             clueKey={answerBoxParams[2]}
           />
