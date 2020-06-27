@@ -2,24 +2,31 @@ import React, { useEffect, useMemo, useRef } from "react";
 import * as R from "ramda";
 import classNames from "classnames";
 import { Cell, Orientation } from "./Crossword";
+import "./TableCell.scss";
 
 interface Props {
   cell: Cell;
   cursor: Cell | null;
+  answer: string;
+  isFocused: boolean;
   cursorDirection: Orientation | null;
   onClick: (e: React.MouseEvent) => void;
-  onInput: (e: React.FormEvent) => void;
+  onInput: (e: React.FormEvent, c: Cell) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 const TableCell: React.FC<Props> = ({
   cell,
   cursor,
+  answer,
+  isFocused,
   cursorDirection,
   onClick,
   onInput,
   onKeyDown,
 }) => {
+  const inputField = useRef<HTMLInputElement>(null);
+
   const isCursor = useMemo(() => {
     if (R.isNil(cursor)) {
       return false;
@@ -49,23 +56,23 @@ const TableCell: React.FC<Props> = ({
     selected: isSelected,
   });
 
-  const inputField = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (isCursor && inputField) {
-      inputField.current?.focus();
+      if (isFocused) {
+        inputField.current?.focus();
+      }
       inputField.current?.setSelectionRange(
         0,
         inputField.current?.value.length
       );
     }
-  }, [isCursor]);
+  }, [isCursor, isFocused]);
 
   const onCellInput = (e: React.FormEvent) => {
     const target = e.target as HTMLInputElement;
     cell.answer = target.value;
 
-    onInput(e);
+    onInput(e, cell);
   };
 
   return (
@@ -75,8 +82,9 @@ const TableCell: React.FC<Props> = ({
         name={`${cell.x}.${cell.y}`}
         type="text"
         maxLength={1}
-        onInput={onCellInput}
+        onChange={onCellInput}
         onKeyDown={onKeyDown}
+        value={answer}
       />
       <span>{cell.clueKey}</span>
     </td>

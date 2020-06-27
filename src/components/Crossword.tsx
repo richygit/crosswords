@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import { isNil } from "ramda";
@@ -29,7 +29,7 @@ export enum Orientation {
 export interface Cell {
   clueKey: number | null; // the clue number to display in the corner
   solution: string | null;
-  answer: string | null;
+  answer: string; //user's answer
   isBlank: boolean;
   isStart: boolean;
   xClueNo: number | null;
@@ -48,6 +48,58 @@ const Crossword: React.FC<CrosswordProps> = ({
   const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
     null
   );
+  // true if the cursor focus is on the matrix, false if it's on the answer box
+  const [isMatrixFocused, setIsMatrixFocused] = useState<boolean>(true);
+  // the text of the user's answer for the currently selected clue
+  const [selectedAnswerText, setSelectedAnswerText] = useState<string | null>(
+    null
+  );
+
+  // returns the cells for the selected solution to render in the solution box
+  const answerBoxFields = useMemo((): [
+    Cell[] | null,
+    [string, number] | null,
+    string | null
+  ] => {
+    if (R.isNil(cursor)) {
+      return [null, null, null];
+    }
+
+    let solutionCells: Array<Cell> | null;
+    let clueText: [string, number] | null = null;
+    let clueKey: string | null = null;
+
+    if (cursorDirection === Orientation.ACROSS || R.isNil(cursorDirection)) {
+      solutionCells = solution.getClueCells(cursor.xClueNo, null);
+      if (R.isNil(cursor.xClueNo)) {
+        clueText = null;
+        clueKey = null;
+      } else {
+        clueText = cluesAcross[cursor.xClueNo];
+        clueKey = `${cursor.xClueNo}A`;
+      }
+    } else {
+      solutionCells = solution.getClueCells(null, cursor.yClueNo);
+      if (R.isNil(cursor.yClueNo)) {
+        clueText = null;
+        clueKey = null;
+      } else {
+        clueText = cluesDown[cursor.yClueNo];
+        clueKey = `${cursor.yClueNo}D`;
+      }
+    }
+
+    return [solutionCells, clueText, clueKey];
+    //ensure selectedAnswerText is a dependency since changes to the answer text will affect what is rendered in the
+    // answer box
+  }, [
+    cursor,
+    cursorDirection,
+    solution,
+    cluesAcross,
+    cluesDown,
+    selectedAnswerText,
+  ]);
 
   const coordsFromId = (id: string): Coords => {
     const coords = id.split(".");
@@ -100,8 +152,22 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   };
 
-  const onCellClick = (e: React.MouseEvent): void => {
+  const onAnswerBoxCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
+    setIsMatrixFocused(false);
+    let elem: Element = e.target as Element;
+    if (elem && elem.nodeName !== "TD") {
+      elem = elem.parentElement as Element;
+    }
+
+    const coords = coordsFromId(elem.id);
+    const clickedCell = solution.getCell(coords);
+    setCursor(clickedCell);
+  };
+
+  const onTableCellClick = (e: React.MouseEvent): void => {
+    e.preventDefault();
+    setIsMatrixFocused(true);
     let elem: Element = e.target as Element;
     if (elem && elem.nodeName !== "TD") {
       elem = elem.parentElement as Element;
@@ -148,7 +214,10 @@ const Crossword: React.FC<CrosswordProps> = ({
   };
 
   // move or backspace actions
-  const onCellKeyDown = (e: React.KeyboardEvent): void => {
+  const onTableCellKeyDown = (
+    e: React.KeyboardEvent,
+    isTableCell: boolean
+  ): void => {
     const target = e.target as HTMLInputElement;
     target.setSelectionRange(0, target.value.length);
 
@@ -159,30 +228,55 @@ const Crossword: React.FC<CrosswordProps> = ({
       RIGHT = 39,
       DOWN = 40;
 
-    switch (e.keyCode) {
-      case BACKSPACE:
-        if (R.isEmpty(target.value)) {
-          //allow backspace to work over empty values
-          editCellEvent(target, false);
-        }
-        break;
-      case LEFT:
-        moveCursorArrowKeys(Direction.LEFT);
-        break;
-      case UP:
-        moveCursorArrowKeys(Direction.UP);
-        break;
-      case RIGHT:
-        moveCursorArrowKeys(Direction.RIGHT);
-        break;
-      case DOWN:
-        moveCursorArrowKeys(Direction.DOWN);
-        break;
+    if (isTableCell) {
+      switch (e.keyCode) {
+        case BACKSPACE:
+          if (R.isEmpty(target.value)) {
+            //allow backspace to work over empty values
+            editCellEvent(target.getAttribute("name"), false);
+          }
+          break;
+        case LEFT:
+          moveCursorArrowKeys(Direction.LEFT);
+          break;
+        case UP:
+          moveCursorArrowKeys(Direction.UP);
+          break;
+        case RIGHT:
+          moveCursorArrowKeys(Direction.RIGHT);
+          break;
+        case DOWN:
+          moveCursorArrowKeys(Direction.DOWN);
+          break;
+      }
+    } else {
+      switch (e.keyCode) {
+        case BACKSPACE:
+          if (R.isEmpty(target.value)) {
+            //allow backspace to work over empty values
+            editCellEvent(target.getAttribute("name"), false);
+          }
+          break;
+        case LEFT:
+          if (cursorDirection === Orientation.ACROSS) {
+            moveCursorArrowKeys(Direction.LEFT);
+          } else {
+            moveCursorArrowKeys(Direction.UP);
+          }
+          break;
+        case RIGHT:
+          if (cursorDirection === Orientation.ACROSS) {
+            moveCursorArrowKeys(Direction.RIGHT);
+          } else {
+            moveCursorArrowKeys(Direction.DOWN);
+          }
+          break;
+      }
     }
   };
 
-  // typing solution event
-  const onCellInput = (e: React.FormEvent): void => {
+  // typing user answer event
+  const onCellInput = (e: React.FormEvent, cell: Cell): void => {
     if (R.isNil(cursor)) {
       return;
     }
@@ -190,9 +284,19 @@ const Crossword: React.FC<CrosswordProps> = ({
     const target = e.target as HTMLInputElement;
     const val = target.value;
 
+    //update matrix
+    solution.data[cell.y][cell.x].answer = val;
+    // update selected answer text
+    const clueNos = SolutionMatrix.getClueNoFromCursor(cursor, cursorDirection);
+    if (!R.isNil(clueNos)) {
+      setSelectedAnswerText(solution.answerText(...clueNos));
+    } else {
+      setSelectedAnswerText(null);
+    }
+
     const moveForwards = !R.isEmpty(val);
 
-    editCellEvent(target, moveForwards);
+    editCellEvent(target.getAttribute("name"), moveForwards);
   };
 
   const onClueClick = (e: React.MouseEvent) => {
@@ -218,15 +322,15 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     if (startCoords) {
       setCursor(solution.getCell(startCoords));
+      setIsMatrixFocused(true);
       setCursorDirection(orientation);
     }
   };
 
   // called when a cell is edited. Move the cursor.
-  const editCellEvent = (target: Element, forwards: boolean) => {
+  const editCellEvent = (name: string | null, forwards: boolean) => {
     const moveDelta = forwards ? 1 : -1;
 
-    const name = target.getAttribute("name");
     if (R.isNil(name)) {
       return;
     }
@@ -249,54 +353,21 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
   };
 
-  // returns the cells for the selected solution to render in the solution box
-  const answerBoxFields = (): [
-    Array<Cell> | null,
-    [string, number] | null,
-    string | null
-  ] => {
-    if (R.isNil(cursor)) {
-      return [null, null, null];
-    }
-
-    let solutionCells: Array<Cell> | null;
-    let clueText: [string, number] | null = null;
-    let clueKey: string | null = null;
-
-    if (cursorDirection === Orientation.ACROSS || R.isNil(cursorDirection)) {
-      solutionCells = solution.getClueCells(cursor.xClueNo, null);
-      if (R.isNil(cursor.xClueNo)) {
-        clueText = null;
-        clueKey = null;
-      } else {
-        clueText = cluesAcross[cursor.xClueNo];
-        clueKey = `${cursor.xClueNo}A`;
-      }
-    } else {
-      solutionCells = solution.getClueCells(null, cursor.yClueNo);
-      if (R.isNil(cursor.yClueNo)) {
-        clueText = null;
-        clueKey = null;
-      } else {
-        clueText = cluesDown[cursor.yClueNo];
-        clueKey = `${cursor.yClueNo}D`;
-      }
-    }
-
-    return [solutionCells, clueText, clueKey];
-  };
-
-  const answerBoxParams = answerBoxFields();
-
   return (
     <>
       <h1>Puzzle cds or rows transformed (9)</h1>
       <div className="crossword__container">
         <div className="answer-container">
           <AnswerBox
-            userAnswers={answerBoxParams[0]}
-            selectedClue={answerBoxParams[1]}
-            clueKey={answerBoxParams[2]}
+            userAnswers={answerBoxFields[0]}
+            selectedClue={answerBoxFields[1]}
+            clueKey={answerBoxFields[2]}
+            cursor={cursor}
+            isFocused={!isMatrixFocused}
+            selectedAnswerText={selectedAnswerText}
+            onClick={onAnswerBoxCellClick}
+            onInput={onCellInput}
+            onKeyDown={(e) => onTableCellKeyDown(e, false)}
           />
         </div>
         <div className="matrix-container">
@@ -320,10 +391,12 @@ const Crossword: React.FC<CrosswordProps> = ({
                             key={`${x}.${y}`}
                             cell={cell}
                             cursor={cursor}
+                            answer={cell.answer}
+                            isFocused={isMatrixFocused}
                             cursorDirection={cursorDirection}
-                            onClick={onCellClick}
+                            onClick={onTableCellClick}
                             onInput={onCellInput}
-                            onKeyDown={onCellKeyDown}
+                            onKeyDown={(e) => onTableCellKeyDown(e, true)}
                           />
                         );
                       }, R.range(0, solution.dimX()))}

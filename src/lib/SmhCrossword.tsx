@@ -101,6 +101,7 @@ class SmhCrossword {
           return {
             solution: txt,
             isBlank: R.isNil(txt),
+            answer: "",
             clueKey: null,
             isStart: false,
             xClueNo: null,
@@ -151,7 +152,7 @@ class SmhCrossword {
         const isBlank = R.isNil(txt) || txt.trim().length === 0;
         dataRow.push({
           solution: txt,
-          answer: null,
+          answer: "",
           isBlank: isBlank,
           clueKey: null,
           isStart: false,

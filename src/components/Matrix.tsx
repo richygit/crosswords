@@ -7,7 +7,7 @@ export interface Coords {
 }
 
 export class SolutionMatrix {
-  private readonly data: Array<Array<Cell>>;
+  readonly data: Array<Array<Cell>>;
 
   constructor(data: Array<Array<Cell>>) {
     this.data = data;
@@ -22,7 +22,7 @@ export class SolutionMatrix {
       return null;
     }
 
-    //TODO figure out how to use this - it gives a weird typescript error
+    //TODO this is neater but it gives a weird typescript error
     // const findCell = R.pipe(R.propEq<string>, R.find);
 
     const clueProp = orientation === Orientation.ACROSS ? "xClueNo" : "yClueNo";
@@ -86,6 +86,17 @@ export class SolutionMatrix {
     return ret;
   }
 
+  public static getClueNoFromCursor = (
+    cursor: Cell,
+    cursorDirection: Orientation | null
+  ): [number | null, number | null] | null => {
+    if (cursorDirection === Orientation.ACROSS || R.isNil(cursorDirection)) {
+      return [cursor.xClueNo, null];
+    } else {
+      return [null, cursor.yClueNo];
+    }
+  };
+
   // returns the cells for the given selection
   public getClueCells = (
     xClueNo: number | null,
@@ -110,5 +121,17 @@ export class SolutionMatrix {
         return { x: c.x, y: c.y + 1 };
       });
     }
+  };
+
+  public answerText = (
+    xClueNo: number | null,
+    yClueNo: number | null
+  ): string | null => {
+    const cells = this.getClueCells(xClueNo, yClueNo);
+    if (R.isNil(cells)) {
+      return null;
+    }
+
+    return cells.map((cell) => cell.answer).join("");
   };
 }

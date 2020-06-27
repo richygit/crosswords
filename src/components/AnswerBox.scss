@@ -1,18 +1,13 @@
 .__answer-box {
   table {
     border-collapse: collapse;
+
+    td.cell {
+      width: 7vw;
+    }
   }
 
   .clue {
     font-size: 0.9rem;
-  }
-  .td {
-    border: 1px solid;
-
-    input {
-      height: 24px;
-      width: 24px;
-      text-transform: uppercase;
-    }
   }
 }
