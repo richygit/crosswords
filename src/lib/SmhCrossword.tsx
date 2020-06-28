@@ -3,8 +3,8 @@ import * as R from "ramda";
 import { Coords, SolutionMatrix } from "../components/Matrix";
 
 export interface ClueGroupData {
-  // clue key no =>  [clue text, word char count]
-  [key: number]: [string, number]; //array tuple
+  // clue key no =>  [clue text, word length] // note word length can be multiple words, so we keep this as a string
+  [key: number]: [string, string]; //array tuple
   //returns the keys of the object
   keys: () => Array<string>;
 }
@@ -189,10 +189,11 @@ class SmhCrossword {
       const sep = clueText!.lastIndexOf("(");
       if (sep >= 0) {
         const text = clueText!.slice(0, sep).trim();
-        const len = clueText!.slice(sep, -1).replace(/[^\d]/g, "");
-        clues[Number.parseInt(ref)] = [text, Number.parseInt(len)];
+        const len = clueText!.slice(sep).trim();
+        console.log("cluetext, sep, len:", clueText, sep, len);
+        clues[Number.parseInt(ref)] = [text, len];
       } else {
-        clues[Number.parseInt(ref)] = [clueText, -1];
+        clues[Number.parseInt(ref)] = [clueText, ""];
       }
     });
 

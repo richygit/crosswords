@@ -6,7 +6,7 @@ import { or } from "ramda";
 interface Props {
   clueKey: number;
   clueText: string;
-  clueLen: number;
+  clueLen: string;
   isSelected: boolean;
   orientation: Orientation;
   onClick: (e: React.MouseEvent) => void;
@@ -34,7 +34,7 @@ const ClueRow: React.FC<Props> = ({
     <li className={liClass} onClick={onClick} {...dataAttributes}>
       <span className="key">{clueKey}</span>
       <span className="text">
-        {clueText} <span className="length">({clueLen})</span>
+        {clueText} <span className="length">{clueLen}</span>
       </span>
     </li>
   );

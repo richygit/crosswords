@@ -58,7 +58,7 @@ const Crossword: React.FC<CrosswordProps> = ({
   // returns the cells for the selected solution to render in the solution box
   const answerBoxFields = useMemo((): [
     Cell[] | null,
-    [string, number] | null,
+    [string, string] | null,
     string | null
   ] => {
     if (R.isNil(cursor)) {
@@ -66,7 +66,7 @@ const Crossword: React.FC<CrosswordProps> = ({
     }
 
     let solutionCells: Array<Cell> | null;
-    let clueText: [string, number] | null = null;
+    let clueText: [string, string] | null = null;
     let clueKey: string | null = null;
 
     if (cursorDirection === Orientation.ACROSS || R.isNil(cursorDirection)) {

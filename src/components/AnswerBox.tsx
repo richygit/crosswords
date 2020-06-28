@@ -6,7 +6,7 @@ import TableCell from "./TableCell";
 
 interface Props {
   userAnswers: Array<Cell> | null;
-  selectedClue: [string, number] | null;
+  selectedClue: [string, string] | null;
   clueKey: string | null;
   cursor: Cell | null;
   isFocused: boolean;
@@ -36,7 +36,7 @@ const AnswerBox: React.FC<Props> = ({
       <div className="clue">
         <span>{clueKey}:</span>
         <span>
-          {selectedClue[0]} [{selectedClue[1]}]
+          {selectedClue[0]} {selectedClue[1]}
         </span>
       </div>
       <table>
