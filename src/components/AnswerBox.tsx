@@ -22,7 +22,7 @@ const AnswerBox: React.FC<Props> = ({
   clueKey,
   cursor,
   isFocused,
-  selectedAnswerText,
+  selectedAnswerText, //force component render by passing this since answers are hidden within 'userAnswers'
   onClick,
   onInput,
   onKeyDown,
@@ -34,8 +34,8 @@ const AnswerBox: React.FC<Props> = ({
   return (
     <div className="__answer-box">
       <div className="clue">
-        <span>{clueKey}:</span>
-        <span>
+        <span className="clue-key">{clueKey}</span>
+        <span className="clue-text">
           {selectedClue[0]} {selectedClue[1]}
         </span>
       </div>

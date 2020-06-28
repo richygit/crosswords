@@ -1,4 +1,9 @@
+@import "./variables";
+
 .__answer-box {
+  background: $selected-clue-bg;
+  padding: 7px;
+
   table {
     border-collapse: collapse;
 
@@ -9,5 +14,16 @@
 
   .clue {
     font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+
+    .clue-key {
+      margin-right: 15px;
+      font-weight: bold;
+    }
+
+  }
+
+  .cell input {
+    font-size: 1.5rem;
   }
 }

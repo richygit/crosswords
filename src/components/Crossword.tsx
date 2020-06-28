@@ -355,7 +355,7 @@ const Crossword: React.FC<CrosswordProps> = ({
 
   return (
     <>
-      <h1>Puzzle cds or rows transformed (9)</h1>
+      <h1>Puzzle cds or rows mixed (9)</h1>
       <div className="crossword__container">
         <div className="answer-container">
           <AnswerBox

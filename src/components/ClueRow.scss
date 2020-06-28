@@ -1,3 +1,5 @@
+@import "./variables";
+
 .clue__row {
   display: flex;
   padding: 3px 3px 10px 3px;
@@ -5,11 +7,11 @@
   font-size: 0.9rem;
 
   &.selected, &:hover.selected {
-    background-color: rgba(183, 209, 218, 0.7);
+    background-color: $selected-clue-bg;
   }
 
   &:hover {
-    background-color: rgba(203, 201, 173, 0.2);
+    background-color: $hover-clue-bg;
     cursor: pointer;
   }
 
