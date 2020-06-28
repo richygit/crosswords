@@ -7,16 +7,17 @@
   font-size: 0.9rem;
 
   &.selected, &:hover.selected {
-    background-color: $selected-clue-bg;
+    background-color: $blue-bg;
   }
 
   &:hover {
-    background-color: $hover-clue-bg;
+    background-color: $green-bg;
     cursor: pointer;
   }
 
   .key {
     flex: 1;
+    font-weight: bold;
   }
   .text {
     flex: 8;

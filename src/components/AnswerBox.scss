@@ -1,7 +1,11 @@
 @import "./variables";
 
+.__answer-box-container {
+  min-height: 90px;
+}
+
 .__answer-box {
-  background: $selected-clue-bg;
+  border-left: $blue-bg 10px solid;
   padding: 7px;
 
   table {
@@ -15,12 +19,17 @@
   .clue {
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
+    display: flex;
 
     .clue-key {
+      flex: 1;
       margin-right: 15px;
       font-weight: bold;
     }
 
+    .clue-text {
+      flex: 8;
+    }
   }
 
   .cell input {

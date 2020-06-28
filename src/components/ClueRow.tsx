@@ -1,7 +1,6 @@
 import React from "react";
 import classNames from "classnames";
 import { Orientation } from "./Crossword";
-import { or } from "ramda";
 
 interface Props {
   clueKey: number;

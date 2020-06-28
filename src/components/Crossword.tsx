@@ -363,6 +363,7 @@ const Crossword: React.FC<CrosswordProps> = ({
             selectedClue={answerBoxFields[1]}
             clueKey={answerBoxFields[2]}
             cursor={cursor}
+            cursorDirection={cursorDirection}
             isFocused={!isMatrixFocused}
             selectedAnswerText={selectedAnswerText}
             onClick={onAnswerBoxCellClick}
