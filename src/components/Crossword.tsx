@@ -411,6 +411,7 @@ const Crossword: React.FC<CrosswordProps> = ({
             clues={cluesAcross}
             orientation={Orientation.ACROSS}
             cursor={cursor}
+            cursorDirection={cursorDirection}
             onClick={onClueClick}
           />
         </div>
@@ -419,6 +420,7 @@ const Crossword: React.FC<CrosswordProps> = ({
             clues={cluesDown}
             orientation={Orientation.DOWN}
             cursor={cursor}
+            cursorDirection={cursorDirection}
             onClick={onClueClick}
           />
         </div>

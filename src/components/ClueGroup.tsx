@@ -9,6 +9,7 @@ interface Props {
   clues: ClueGroupData;
   orientation: Orientation;
   cursor: Cell | null;
+  cursorDirection: Orientation | null;
   onClick: (e: React.MouseEvent) => void;
 }
 
@@ -16,6 +17,7 @@ const ClueGroup: React.FC<Props> = ({
   clues,
   orientation,
   cursor,
+  cursorDirection,
   onClick,
 }) => {
   const cursorXNo = useMemo(() => (R.isNil(cursor) ? null : cursor.xClueNo), [
@@ -31,12 +33,12 @@ const ClueGroup: React.FC<Props> = ({
 
   const heading = orientation === Orientation.ACROSS ? "Across" : "Down";
 
-  const isRowSelected = (clueKey: number, clueOrientation: Orientation) => {
-    if (clueOrientation === Orientation.ACROSS && clueKey === cursorXNo) {
-      return true;
+  const isRowSelected = (clueKey: number) => {
+    if (orientation !== cursorDirection || R.isNil(orientation)) {
+      return false;
     }
 
-    return clueOrientation === Orientation.DOWN && clueKey === cursorYNo;
+    return clueKey === cursorXNo;
   };
 
   return (
@@ -54,7 +56,7 @@ const ClueGroup: React.FC<Props> = ({
                   clueKey={clueKey}
                   clueText={clue[0]}
                   clueLen={clue[1]}
-                  isSelected={isRowSelected(clueKey, orientation)}
+                  isSelected={isRowSelected(clueKey)}
                   orientation={orientation}
                   onClick={onClick}
                 />
