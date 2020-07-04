@@ -4,13 +4,11 @@ import SmhCrossword, { ClueGroupData } from "../lib/SmhCrossword";
 import Crossword from "./Crossword";
 import * as R from "ramda";
 import { SolutionMatrix } from "./Matrix";
+import UrlLoader from "./UrlLoader";
 
 const LZString = require("lz-string/libs/lz-string");
 
 const Home: React.FC = () => {
-  //TODO - check if params provided, if so, route to crossword page
-
-  const fileReader = useRef<FileReader | null>(null);
   const [matrix, setMatrix] = useState<SolutionMatrix | null>(null);
   const [cluesAcross, setCluesAcross] = useState<ClueGroupData | null>(null);
   const [cluesDown, setCluesDown] = useState<ClueGroupData | null>(null);
@@ -52,14 +50,29 @@ const Home: React.FC = () => {
     }
   }, [m, a, d]);
 
-  const onFileRead = (e: any) => {
-    if (R.isNil(fileReader.current)) {
-      return;
-    }
+  const encodeQueryData = (data: any) => {
+    const ret = [];
+    for (let d in data)
+      if (data.hasOwnProperty(d)) {
+        ret.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
+      }
+    return ret.join("&");
+  };
 
-    const content = fileReader.current.result;
+  const onCopyClick = () => {
+    if (!R.isNil(shareRef.current)) {
+      shareRef.current.select();
+      document.execCommand("copy");
+      setShowCopyFlash(true);
+      window.setTimeout(() => {
+        setShowCopyFlash(false);
+      }, 5000);
+    }
+  };
+
+  const onPageLoaded = (pageBody: string) => {
     let parser = new DOMParser();
-    let dom = parser.parseFromString(String(content), "text/html");
+    let dom = parser.parseFromString(String(pageBody), "text/html");
 
     const smhCrossword = new SmhCrossword(dom);
 
@@ -72,11 +85,11 @@ const Home: React.FC = () => {
     );
 
     const acrossEncoded = LZString.compressToEncodedURIComponent(
-      JSON.stringify(smhCrossword.cluesAcross)
+      JSON.stringify(cluesAcross)
     );
 
     const downEncoded = LZString.compressToEncodedURIComponent(
-      JSON.stringify(smhCrossword.cluesDown)
+      JSON.stringify(cluesDown)
     );
 
     setShareUrl(
@@ -86,35 +99,6 @@ const Home: React.FC = () => {
         d: downEncoded,
       })}`
     );
-
-    //reset fileReader since we don't need it any more
-    fileReader.current = null;
-  };
-
-  const encodeQueryData = (data: any) => {
-    const ret = [];
-    for (let d in data)
-      if (data.hasOwnProperty(d)) {
-        ret.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
-      }
-    return ret.join("&");
-  };
-
-  const onFileChosen = (file: any) => {
-    fileReader.current = new FileReader();
-    fileReader.current.onloadend = onFileRead;
-    fileReader.current.readAsText(file);
-  };
-
-  const onCopyClick = () => {
-    if (!R.isNil(shareRef.current)) {
-      shareRef.current.select();
-      document.execCommand("copy");
-      setShowCopyFlash(true);
-      window.setTimeout(() => {
-        setShowCopyFlash(false);
-      }, 5000);
-    }
   };
 
   // otherwise show upload area
@@ -141,7 +125,12 @@ const Home: React.FC = () => {
       </>
     );
   } else {
-    return <FileUploader onFileChosen={onFileChosen} onFileRead={onFileRead} />;
+    return (
+      <>
+        <UrlLoader onPageLoaded={onPageLoaded} />
+        <FileUploader onPageLoaded={onPageLoaded} />
+      </>
+    );
   }
 };
 export default Home;
