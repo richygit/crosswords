@@ -13,7 +13,6 @@ const PROXY_URL = atob(
 );
 
 interface State {
-  // value: number;
   loading: boolean;
   error: string | undefined;
   pageBody: string | undefined;

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useReducer, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import { isNil } from "ramda";
@@ -7,6 +7,7 @@ import TableCell from "./TableCell";
 import { Coords, SolutionMatrix } from "./Matrix";
 import ClueGroup from "./ClueGroup";
 import AnswerBox from "./AnswerBox";
+import MatrixTable from "./MatrixTable";
 
 interface CrosswordProps {
   matrix: SolutionMatrix;
@@ -38,18 +39,66 @@ export interface Cell {
   y: number;
 }
 
+interface CursorState {
+  cursor: Cell | null;
+  direction: Orientation | null;
+  //true if the focus is in the matrix, false if it's in the answer box
+  isMatrixFocused: boolean;
+}
+
+type CursorAction =
+  | {
+      type: "UPDATE_DIRECTION_FOCUS";
+      direction: Orientation | null;
+      isMatrixFocused: boolean;
+    }
+  | { type: "UPDATE_CELL"; cursor: Cell | null }
+  | {
+      type: "UPDATE_CURSOR";
+      cursor: Cell | null;
+      direction: Orientation | null;
+      isMatrixFocused: boolean;
+    }
+  | {
+      type: "UPDATE_FOCUS_CELL";
+      cursor: Cell | null;
+      isMatrixFocused: boolean;
+    };
+
+const cursorReducer = (state: CursorState, action: CursorAction) => {
+  switch (action.type) {
+    case "UPDATE_DIRECTION_FOCUS":
+      return { ...state, direction: action.direction, isMatrixFocused: true };
+    case "UPDATE_CELL":
+      return { ...state, cursor: action.cursor };
+    case "UPDATE_CURSOR":
+      return {
+        cursor: action.cursor,
+        direction: action.direction,
+        isMatrixFocused: action.isMatrixFocused,
+      };
+    case "UPDATE_FOCUS_CELL":
+      return {
+        ...state,
+        cursor: action.cursor,
+        isMatrixFocused: action.isMatrixFocused,
+      };
+    default:
+      throw Error(`Unknown cursor action type: ${action}`);
+  }
+};
+
 const Crossword: React.FC<CrosswordProps> = ({
   matrix: solution,
   cluesAcross,
   cluesDown,
 }) => {
-  // crossword answers
-  const [cursor, setCursor] = useState<Cell | null>(null);
-  const [cursorDirection, setCursorDirection] = useState<Orientation | null>(
-    null
-  );
-  // true if the cursor focus is on the matrix, false if it's on the answer box
-  const [isMatrixFocused, setIsMatrixFocused] = useState<boolean>(true);
+  const [cursorState, cursorDispatch] = useReducer(cursorReducer, {
+    cursor: null,
+    direction: null,
+    isMatrixFocused: true,
+  });
+  const { cursor, direction: cursorDirection, isMatrixFocused } = cursorState;
   // the text of the user's answer for the currently selected clue
   const [selectedAnswerText, setSelectedAnswerText] = useState<string | null>(
     null
@@ -119,13 +168,21 @@ const Crossword: React.FC<CrosswordProps> = ({
       cursor &&
       !R.isNil(cursor.yClueNo)
     ) {
-      setCursorDirection(Orientation.DOWN);
+      cursorDispatch({
+        type: "UPDATE_DIRECTION_FOCUS",
+        direction: Orientation.DOWN,
+        isMatrixFocused: true,
+      });
     } else if (
       cursorDirection === Orientation.DOWN &&
       cursor &&
       !R.isNil(cursor.xClueNo)
     ) {
-      setCursorDirection(Orientation.ACROSS);
+      cursorDispatch({
+        type: "UPDATE_DIRECTION_FOCUS",
+        direction: Orientation.ACROSS,
+        isMatrixFocused: true,
+      });
     }
   };
 
@@ -137,24 +194,39 @@ const Crossword: React.FC<CrosswordProps> = ({
     return a.x === b.x && a.y === b.y;
   };
 
-  const updateCursorDirection = (cell: Cell | null) => {
+  //updates cell and direction
+  const updateCursor = (cell: Cell | null, isMatrixFocused: boolean) => {
     if (isNil(cell)) {
       return;
     }
 
     if (!isNil(cell.xClueNo)) {
       // default to across, even if there is a Y clue number
-      setCursorDirection(Orientation.ACROSS);
+      cursorDispatch({
+        type: "UPDATE_CURSOR",
+        cursor: cell,
+        direction: Orientation.ACROSS,
+        isMatrixFocused,
+      });
     } else if (!isNil(cell.yClueNo)) {
-      setCursorDirection(Orientation.DOWN);
+      cursorDispatch({
+        type: "UPDATE_CURSOR",
+        cursor: cell,
+        direction: Orientation.DOWN,
+        isMatrixFocused,
+      });
     } else {
-      setCursorDirection(null);
+      cursorDispatch({
+        type: "UPDATE_CURSOR",
+        cursor: cell,
+        direction: null,
+        isMatrixFocused,
+      });
     }
   };
 
   const onAnswerBoxCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
-    setIsMatrixFocused(false);
     let elem: Element = e.target as Element;
     if (elem && elem.nodeName !== "TD") {
       elem = elem.parentElement as Element;
@@ -162,12 +234,15 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     const coords = coordsFromId(elem.id);
     const clickedCell = solution.getCell(coords);
-    setCursor(clickedCell);
+    cursorDispatch({
+      type: "UPDATE_FOCUS_CELL",
+      cursor: clickedCell,
+      isMatrixFocused: false,
+    });
   };
 
   const onTableCellClick = (e: React.MouseEvent): void => {
     e.preventDefault();
-    setIsMatrixFocused(true);
     let elem: Element = e.target as Element;
     if (elem && elem.nodeName !== "TD") {
       elem = elem.parentElement as Element;
@@ -178,12 +253,14 @@ const Crossword: React.FC<CrosswordProps> = ({
     if (isSameCell(clickedCell, cursor)) {
       toggleCursorDirection();
     } else {
-      setCursor(clickedCell);
-      updateCursorDirection(clickedCell);
+      updateCursor(clickedCell, true);
     }
   };
 
-  const moveCursorArrowKeys = (direction: Direction) => {
+  const moveCursorArrowKeys = (
+    direction: Direction,
+    isMatrixFocused: boolean
+  ) => {
     if (R.isNil(cursor)) {
       return;
     }
@@ -208,8 +285,7 @@ const Crossword: React.FC<CrosswordProps> = ({
 
     const newCell = solution.getCell({ x, y } as Coords);
     if (!R.isNil(newCell) && !newCell.isBlank) {
-      setCursor(newCell);
-      updateCursorDirection(newCell);
+      updateCursor(newCell, isMatrixFocused);
     }
   };
 
@@ -237,19 +313,20 @@ const Crossword: React.FC<CrosswordProps> = ({
           }
           break;
         case LEFT:
-          moveCursorArrowKeys(Direction.LEFT);
+          moveCursorArrowKeys(Direction.LEFT, true);
           break;
         case UP:
-          moveCursorArrowKeys(Direction.UP);
+          moveCursorArrowKeys(Direction.UP, true);
           break;
         case RIGHT:
-          moveCursorArrowKeys(Direction.RIGHT);
+          moveCursorArrowKeys(Direction.RIGHT, true);
           break;
         case DOWN:
-          moveCursorArrowKeys(Direction.DOWN);
+          moveCursorArrowKeys(Direction.DOWN, true);
           break;
       }
     } else {
+      // answer box
       switch (e.keyCode) {
         case BACKSPACE:
           if (R.isEmpty(target.value)) {
@@ -259,16 +336,16 @@ const Crossword: React.FC<CrosswordProps> = ({
           break;
         case LEFT:
           if (cursorDirection === Orientation.ACROSS) {
-            moveCursorArrowKeys(Direction.LEFT);
+            moveCursorArrowKeys(Direction.LEFT, false);
           } else {
-            moveCursorArrowKeys(Direction.UP);
+            moveCursorArrowKeys(Direction.UP, false);
           }
           break;
         case RIGHT:
           if (cursorDirection === Orientation.ACROSS) {
-            moveCursorArrowKeys(Direction.RIGHT);
+            moveCursorArrowKeys(Direction.RIGHT, false);
           } else {
-            moveCursorArrowKeys(Direction.DOWN);
+            moveCursorArrowKeys(Direction.DOWN, false);
           }
           break;
       }
@@ -321,9 +398,12 @@ const Crossword: React.FC<CrosswordProps> = ({
     );
 
     if (startCoords) {
-      setCursor(solution.getCell(startCoords));
-      setIsMatrixFocused(true);
-      setCursorDirection(orientation);
+      cursorDispatch({
+        type: "UPDATE_CURSOR",
+        cursor: solution.getCell(startCoords),
+        direction: orientation,
+        isMatrixFocused: true,
+      });
     }
   };
 
@@ -349,7 +429,7 @@ const Crossword: React.FC<CrosswordProps> = ({
     const next = solution.getCell(nextCoords);
 
     if (!R.isNil(next) && !next.isBlank) {
-      setCursor(next);
+      cursorDispatch({ type: "UPDATE_CELL", cursor: next });
     }
   };
 
@@ -371,42 +451,15 @@ const Crossword: React.FC<CrosswordProps> = ({
             onKeyDown={(e) => onTableCellKeyDown(e, false)}
           />
         </div>
-        <div className="matrix-container">
-          <table className="crossword__matrix">
-            <tbody>
-              {solution &&
-                R.map((y) => {
-                  return (
-                    <tr className="row" key={y}>
-                      {R.map((x) => {
-                        const cell = solution.getCell({ x, y } as Coords);
-                        if (R.isNil(cell)) {
-                          console.error(
-                            `Can't find cell in solution: ${x}, ${y}`
-                          );
-                          return "error";
-                        }
-
-                        return (
-                          <TableCell
-                            key={`${x}.${y}`}
-                            cell={cell}
-                            cursor={cursor}
-                            answer={cell.answer}
-                            isFocused={isMatrixFocused}
-                            cursorDirection={cursorDirection}
-                            onClick={onTableCellClick}
-                            onInput={onCellInput}
-                            onKeyDown={(e) => onTableCellKeyDown(e, true)}
-                          />
-                        );
-                      }, R.range(0, solution.dimX()))}
-                    </tr>
-                  );
-                }, R.range(0, solution.dimY()))}
-            </tbody>
-          </table>
-        </div>
+        <MatrixTable
+          solution={solution}
+          cursor={cursor}
+          cursorDirection={cursorDirection}
+          isMatrixFocused={isMatrixFocused}
+          onClick={onTableCellClick}
+          onInput={onCellInput}
+          onKeyDown={onTableCellKeyDown}
+        />
         <div className="across">
           <ClueGroup
             clues={cluesAcross}

@@ -22,7 +22,7 @@ export class SolutionMatrix {
       return null;
     }
 
-    //TODO this is neater but it gives a weird typescript error
+    //TODO the following is neater but it gives a weird typescript error
     // const findCell = R.pipe(R.propEq<string>, R.find);
 
     const clueProp = orientation === Orientation.ACROSS ? "xClueNo" : "yClueNo";
