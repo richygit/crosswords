@@ -1,4 +1,4 @@
-import React, { useMemo, useReducer, useState } from "react";
+import React, { useMemo, useReducer, useRef, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import { isNil } from "ramda";
@@ -401,9 +401,19 @@ const Crossword: React.FC<CrosswordProps> = ({
         type: "UPDATE_CURSOR",
         cursor: solution.getCell(startCoords),
         direction: orientation,
-        isMatrixFocused: true,
+        isMatrixFocused: !answerBoxDisplayed(),
       });
     }
+  };
+
+  const answerBoxDisplayed = () => {
+    const answerBoxContainer = document
+      .getElementsByClassName("__answer-box-container")
+      .item(0);
+    if (!R.isNil(answerBoxContainer)) {
+      return getComputedStyle(answerBoxContainer, null).display !== "none";
+    }
+    return false;
   };
 
   // called when a cell is edited. Move the cursor.
