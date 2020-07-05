@@ -28,7 +28,7 @@ td.cursor.blank {
   border: 0;
   padding: 0;
   background-color: rgba(0, 0, 0, 0);
-  font-size: 1.6em;
+  font-size: 7vw;
   text-align: center;
   text-transform: uppercase;
   font-weight: 700;
@@ -56,3 +56,14 @@ td.cursor.selected {
 td.selected {
   background-color: $blue-bg;
 }
+
+@media (min-width: $large-width-breakpoint){
+  .cell input {
+    font-size: 3vw;
+  }
+
+  .cell span {
+    font-size: 60%;
+  }
+}
+

@@ -2,12 +2,11 @@ import React, { useMemo, useReducer, useState } from "react";
 import { ClueGroupData } from "../lib/SmhCrossword";
 import * as R from "ramda";
 import { isNil } from "ramda";
-import "./Crossword.scss";
-import TableCell from "./TableCell";
 import { Coords, SolutionMatrix } from "./Matrix";
 import ClueGroup from "./ClueGroup";
 import AnswerBox from "./AnswerBox";
 import MatrixTable from "./MatrixTable";
+import "./Crossword.scss";
 
 interface CrosswordProps {
   matrix: SolutionMatrix;

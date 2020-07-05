@@ -1,3 +1,5 @@
+@import "./variables";
+
 .crossword__container {
   max-width: 1200px;
   margin: 0 10px;
@@ -50,6 +52,21 @@ h2 {
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
-
-
 }
+
+@media (min-width: $large-width-breakpoint){
+  .crossword__container {
+    display: flex;
+    margin: 20px auto;
+
+    .matrix-container {
+      flex: 2;
+      margin-right: 20px;
+    }
+    .across, .down {
+      flex: 1;
+      margin-right: 10px;
+    }
+  }
+}
+

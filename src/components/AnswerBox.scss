@@ -31,8 +31,10 @@
       flex: 8;
     }
   }
+}
 
-  .cell input {
-    font-size: 1.5rem;
+@media (min-width: $large-width-breakpoint){
+  .__answer-box-container {
+    display: none;
   }
 }
