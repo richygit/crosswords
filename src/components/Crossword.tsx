@@ -123,7 +123,7 @@ const Crossword: React.FC<CrosswordProps> = ({
     } else if (
       cursorDirection === Orientation.DOWN &&
       cursor &&
-      !R.isNil(cursor.yClueNo)
+      !R.isNil(cursor.xClueNo)
     ) {
       setCursorDirection(Orientation.ACROSS);
     }
