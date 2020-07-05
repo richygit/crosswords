@@ -85,11 +85,11 @@ const Home: React.FC = () => {
     );
 
     const acrossEncoded = LZString.compressToEncodedURIComponent(
-      JSON.stringify(cluesAcross)
+      JSON.stringify(smhCrossword.cluesAcross)
     );
 
     const downEncoded = LZString.compressToEncodedURIComponent(
-      JSON.stringify(cluesDown)
+      JSON.stringify(smhCrossword.cluesDown)
     );
 
     setShareUrl(
